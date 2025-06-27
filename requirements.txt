@@ -1,1 +1,3 @@
-random==1.0.1
+# No external libraries required.
+# Standard library only.
+python>=3.8
