@@ -1,0 +1,9 @@
+# Backend
+fastapi
+uvicorn
+
+# Frontend (React Native/Expo)
+react-native
+expo
+react-native-svg
+react-native-chart-kit
