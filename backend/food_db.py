@@ -1,25 +1,25 @@
 foods = {
     # Fruits (per piece, average)
-    "Apple": 52,           # 1 medium (about 180g)
-    "Banana": 89,          # 1 medium (about 120g)
-    "Orange": 62,          # 1 medium (about 130g)
-    "Grapes": 62,          # 1 cup (~150g)
-    "Strawberry": 4,       # 1 medium (about 12g)
-    "Blueberry": 1,        # 1 berry (about 1g)
-    "Raspberry": 1,        # 1 berry (about 1g)
-    "Watermelon": 30,      # 1 wedge (about 280g)
-    "Cantaloupe": 53,      # 1 cup (~160g)
-    "Pineapple": 50,       # 1 slice (about 80g)
-    "Mango": 150,          # 1 medium (about 200g)
-    "Peach": 59,           # 1 medium (about 150g)
-    "Pear": 100,           # 1 medium (about 170g)
-    "Avocado": 240,        # 1 medium (about 200g)
-    "Lemon": 17,           # 1 fruit (about 60g)
-    "Kiwi": 42,            # 1 medium (about 70g)
-    "Cherry": 4,           # 1 cherry (about 8g)
-    "Plum": 30,            # 1 medium (about 66g)
-    "Date (dried)": 23,    # 1 date (about 7g)
-    "Fig (fresh)": 30,     # 1 medium (about 50g)
+    "Apple": {"calorie": 52, "unit": "item", "type": "piece"},           # 1 medium (about 180g)
+    "Banana": {"calorie": 89, "unit": "item", "type": "piece"},          # 1 medium (about 120g)
+    "Orange": {"calorie": 62, "unit": "item", "type": "piece"},          # 1 medium (about 130g)
+    "Grapes": {"calorie": 62, "unit": "cup", "type": "volume"},          # 1 cup (~150g)
+    "Strawberry": {"calorie": 4, "unit": "item", "type": "piece"},       # 1 medium (about 12g)
+    "Blueberry": {"calorie": 1, "unit": "item", "type": "piece"},        # 1 berry (about 1g)
+    "Raspberry": {"calorie": 1, "unit": "item", "type": "piece"},        # 1 berry (about 1g)
+    "Watermelon": {"calorie": 30, "unit": "wedge", "type": "piece"},      # 1 wedge (about 280g)
+    "Cantaloupe": {"calorie": 53, "unit": "cup", "type": "volume"},      # 1 cup (~160g)
+    "Pineapple": {"calorie": 50, "unit": "slice", "type": "piece"},       # 1 slice (about 80g)
+    "Mango": {"calorie": 150, "unit": "item", "type": "piece"},          # 1 medium (about 200g)
+    "Peach": {"calorie": 59, "unit": "item", "type": "piece"},           # 1 medium (about 150g)
+    "Pear": {"calorie": 100, "unit": "item", "type": "piece"},           # 1 medium (about 170g)
+    "Avocado": {"calorie": 240, "unit": "item", "type": "piece"},        # 1 medium (about 200g)
+    "Lemon": {"calorie": 17, "unit": "item", "type": "piece"},           # 1 fruit (about 60g)
+    "Kiwi": {"calorie": 42, "unit": "item", "type": "piece"},            # 1 medium (about 70g)
+    "Cherry": {"calorie": 4, "unit": "item", "type": "piece"},           # 1 cherry (about 8g)
+    "Plum": {"calorie": 30, "unit": "item", "type": "piece"},            # 1 medium (about 66g)
+    "Date (dried)": {"calorie": 23, "unit": "item", "type": "piece"},    # 1 date (about 7g)
+    "Fig (fresh)": {"calorie": 30, "unit": "item", "type": "piece"},     # 1 medium (about 50g)
 
     # Vegetables (per 100g)
     "Broccoli": 34,
@@ -44,18 +44,17 @@ foods = {
     "Celery": 16,
 
     # Grains & Legumes (per 100g cooked)
-    "White Rice (cooked)": 130,
-    "Brown Rice (cooked)": 111,
-    "Pasta (cooked)": 131,
-    "Whole Wheat Bread": 260,
-    "Oatmeal (cooked)": 68,
-    "Quinoa (cooked)": 120,
-    "Lentils (cooked)": 116,
-    "Chickpeas (cooked)": 164,
-    "Black Beans (cooked)": 132,
-    "Corn Tortilla": 218,
-    "Popcorn (air-popped)": 387,
-    "Cereal (O-shaped, plain)": 379,
+    "Rice": {"calorie": 130, "unit": "g", "type": "weight"},
+    "Pasta (cooked)": {"calorie": 131, "unit": "g", "type": "weight"},
+    "Whole Wheat Bread": {"calorie": 260, "unit": "g", "type": "weight"},
+    "Oatmeal (cooked)": {"calorie": 68, "unit": "g", "type": "weight"},
+    "Quinoa (cooked)": {"calorie": 120, "unit": "g", "type": "weight"},
+    "Lentils (cooked)": {"calorie": 116, "unit": "g", "type": "weight"},
+    "Chickpeas (cooked)": {"calorie": 164, "unit": "g", "type": "weight"},
+    "Black Beans (cooked)": {"calorie": 132, "unit": "g", "type": "weight"},
+    "Corn Tortilla": {"calorie": 218, "unit": "g", "type": "weight"},
+    "Popcorn (air-popped)": {"calorie": 387, "unit": "g", "type": "weight"},
+    "Cereal (O-shaped, plain)": {"calorie": 379, "unit": "g", "type": "weight"},
 
     # Proteins (per 100g)
     "Chicken Breast (cooked, skinless)": 165,

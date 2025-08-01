@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from foods_db import foods
+from food_db import foods
 
 app = FastAPI()
 
@@ -30,7 +30,7 @@ def add_food(entry: FoodEntry):
         raise HTTPException(status_code=400, detail="Food not found in database.")
     if quantity <= 0:
         raise HTTPException(status_code=400, detail="Quantity must be positive.")
-    calories = foods[food_key] * quantity
+    calories = foods[food_key]["calorie"] * quantity
     food_log.append({
         "name": food_key,
         "quantity": quantity,
@@ -45,4 +45,4 @@ def get_foods():
 @app.delete("/foods")
 def clear_foods():
     food_log.clear()
-    return {"message":
+    return {"message": "All foods cleared!"}

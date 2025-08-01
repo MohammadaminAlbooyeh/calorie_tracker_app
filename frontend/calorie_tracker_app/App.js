@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, FlatList, Dimensions, ScrollView, TextInput, Button, TouchableOpacity } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { PieChart } from 'react-native-chart-kit';
 
 // Food calorie database (per unit)
@@ -29,6 +30,7 @@ export default function App() {
   const [foods, setFoods] = useState([]);
   const [foodName, setFoodName] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [unit, setUnit] = useState('');
   const [error, setError] = useState('');
 
   // Pie chart sample data (static for now)
@@ -91,6 +93,20 @@ export default function App() {
           onChangeText={setQuantity}
           keyboardType="numeric"
         />
+        <View style={styles.input}>
+          <Picker
+            selectedValue={unit}
+            onValueChange={(itemValue) => setUnit(itemValue)}
+            style={{height: 40}}
+          >
+            <Picker.Item label="Select unit..." value="" />
+            <Picker.Item label="g" value="g" />
+            <Picker.Item label="item" value="item" />
+            <Picker.Item label="cup" value="cup" />
+            <Picker.Item label="slice" value="slice" />
+            <Picker.Item label="wedge" value="wedge" />
+          </Picker>
+        </View>
         <TouchableOpacity style={styles.addButton} onPress={handleAddFood}>
           <Text style={styles.addButtonText}>Add</Text>
         </TouchableOpacity>
