@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, FlatList, Dimensions, ScrollView, TextInput, Button, TouchableOpacity } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { PieChart } from 'react-native-chart-kit';
+import * as SQLite from 'expo-sqlite';
+import { Calendar } from 'react-native-calendars';
 
 // Food calorie database (per unit)
 const foodCalories = {
@@ -13,18 +15,32 @@ const foodCalories = {
   Oatmeal: 81,
   Strawberries: 42,
   'Hot Tea': 2,
+  Rice: 1.3, // per gram
 };
 
-const foodIcons = {
-  Apple: 'https://img.icons8.com/emoji/48/000000/red-apple.png',
-  Banana: 'https://img.icons8.com/emoji/48/000000/banana-emoji.png',
-  Egg: 'https://img.icons8.com/emoji/48/000000/cooked-egg-emoji.png',
-  Bread: 'https://img.icons8.com/emoji/48/000000/bread-emoji.png',
-  'Milk Low Fat': 'https://img.icons8.com/emoji/48/000000/glass-of-milk-emoji.png',
-  Oatmeal: 'https://img.icons8.com/emoji/48/000000/bowl-with-spoon-emoji.png',
-  Strawberries: 'https://img.icons8.com/emoji/48/000000/strawberry-emoji.png',
-  'Hot Tea': 'https://img.icons8.com/emoji/48/000000/teacup-without-handle-emoji.png',
+const foodUnits = {
+  Apple: 'item',
+  Banana: 'item',
+  Egg: 'item',
+  Bread: 'item',
+  'Milk Low Fat': 'ml',
+  Oatmeal: 'g',
+  Strawberries: 'g',
+  'Hot Tea': 'ml',
+  Rice: 'g',
 };
+
+// SQLite setup
+const db = SQLite.openDatabase('foods.db');
+
+// Create table if not exists
+React.useEffect(() => {
+  db.transaction(tx => {
+    tx.executeSql(
+      'CREATE TABLE IF NOT EXISTS foods (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, quantity INTEGER, unit TEXT, calories REAL, date TEXT);'
+    );
+  });
+}, []);
 
 export default function App() {
   const [foods, setFoods] = useState([]);
@@ -32,8 +48,19 @@ export default function App() {
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('');
   const [error, setError] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
 
-  // Pie chart sample data (static for now)
+  // Load foods for selected date
+  React.useEffect(() => {
+    db.transaction(tx => {
+      tx.executeSql(
+        'SELECT * FROM foods WHERE date = ?;',
+        [selectedDate],
+        (_, { rows }) => setFoods(rows._array)
+      );
+    });
+  }, [selectedDate]);
+
   const carbs = 251, protein = 74, fat = 30;
   const macrosTotal = carbs + protein + fat;
 
@@ -49,9 +76,8 @@ export default function App() {
     setError('');
     const name = foodName.trim();
     const qty = parseInt(quantity);
-
-    if (!name || isNaN(qty) || qty <= 0) {
-      setError('Please enter valid food and quantity.');
+    if (!name || isNaN(qty) || qty <= 0 || !unit) {
+      setError('Please enter valid food, quantity, and unit.');
       return;
     }
     if (!foodCalories[name]) {
@@ -59,25 +85,39 @@ export default function App() {
       return;
     }
     const calories = foodCalories[name] * qty;
-    setFoods([
-      ...foods,
-      {
-        id: Date.now().toString(),
-        name,
-        quantity: qty,
-        calories,
-        icon: foodIcons[name],
-      },
-    ]);
+    db.transaction(tx => {
+      tx.executeSql(
+        'INSERT INTO foods (name, quantity, unit, calories, date) VALUES (?, ?, ?, ?, ?);',
+        [name, qty, unit, calories, selectedDate],
+        (_, result) => {
+          setFoods([...foods, { id: result.insertId, name, quantity: qty, unit, calories }]);
+        }
+      );
+    });
     setFoodName('');
     setQuantity('');
+    setUnit('');
   };
+
+  // Set unit automatically when foodName changes
+  React.useEffect(() => {
+    if (foodName && foodUnits[foodName]) {
+      setUnit(foodUnits[foodName]);
+    } else {
+      setUnit('');
+    }
+  }, [foodName]);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={styles.header}>
         <Text style={styles.headerText}>Calorie Tracker</Text>
       </View>
+      <Calendar
+        onDayPress={day => setSelectedDate(day.dateString)}
+        markedDates={{ [selectedDate]: { selected: true, selectedColor: '#22c55e' } }}
+        style={{ margin: 10, borderRadius: 10 }}
+      />
       <View style={styles.addBox}>
         <Text style={styles.addTitle}>Add Food</Text>
         <TextInput
@@ -93,19 +133,11 @@ export default function App() {
           onChangeText={setQuantity}
           keyboardType="numeric"
         />
-        <View style={styles.input}>
-          <Picker
-            selectedValue={unit}
-            onValueChange={(itemValue) => setUnit(itemValue)}
-            style={{height: 40}}
-          >
-            <Picker.Item label="Select unit..." value="" />
-            <Picker.Item label="g" value="g" />
-            <Picker.Item label="item" value="item" />
-            <Picker.Item label="cup" value="cup" />
-            <Picker.Item label="slice" value="slice" />
-            <Picker.Item label="wedge" value="wedge" />
-          </Picker>
+        {/* Show unit as read-only text */}
+        <View style={{marginBottom: 8}}>
+          <Text style={{fontSize: 16, color: unit ? '#222' : '#aaa', padding: 10, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, backgroundColor: '#f9f9f9'}}>
+            {unit ? `Unit: ${unit}` : 'Unit will appear here'}
+          </Text>
         </View>
         <TouchableOpacity style={styles.addButton} onPress={handleAddFood}>
           <Text style={styles.addButtonText}>Add</Text>
@@ -114,11 +146,10 @@ export default function App() {
       </View>
       <FlatList
         data={foods}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.id?.toString() || item.name}
         renderItem={({ item }) => (
           <View style={styles.foodRow}>
-            <Image source={{ uri: item.icon }} style={styles.icon} />
-            <Text style={styles.foodName}>{item.name} x{item.quantity}</Text>
+            <Text style={styles.foodName}>{item.name} x{item.quantity} {item.unit}</Text>
             <Text style={styles.calories}>{item.calories} cals</Text>
           </View>
         )}
@@ -127,7 +158,7 @@ export default function App() {
       />
       <View style={styles.totalsRow}>
         <Text style={styles.totalsLabel}>Day Totals</Text>
-        <Text style={styles.totalsValue}>{totalCalories} cals</Text>
+        <Text style={styles.totalsValue}>{foods.reduce((sum, item) => sum + (item.calories || 0), 0)} cals</Text>
       </View>
       <View style={styles.chartRow}>
         <PieChart

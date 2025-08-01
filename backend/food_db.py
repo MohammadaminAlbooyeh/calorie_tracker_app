@@ -44,7 +44,7 @@ foods = {
     "Celery": 16,
 
     # Grains & Legumes (per 100g cooked)
-    "Rice": {"calorie": 130, "unit": "g", "type": "weight"},
+    "Rice": {"calorie": 1.3, "unit": "g", "type": "weight"},  # 1.3 cal per 1g cooked
     "Pasta (cooked)": {"calorie": 131, "unit": "g", "type": "weight"},
     "Whole Wheat Bread": {"calorie": 260, "unit": "g", "type": "weight"},
     "Oatmeal (cooked)": {"calorie": 68, "unit": "g", "type": "weight"},
@@ -71,13 +71,13 @@ foods = {
     "Edamame (shelled, cooked)": 122,
 
     # Dairy & Alternatives (per 100g)
-    "Milk (2% fat)": 50,
+    "Milk (2% fat)": {"calorie": 0.5, "unit": "ml", "type": "liquid"},  # 0.5 cal per 1ml
     "Plain Greek Yogurt (0% fat)": 59,
     "Cheddar Cheese": 403,
     "Cottage Cheese (low fat)": 72,
     "Feta Cheese": 264,
-    "Soy Milk (unsweetened)": 38,
-    "Almond Milk (unsweetened)": 15,
+    "Soy Milk (unsweetened)": {"calorie": 0.38, "unit": "ml", "type": "liquid"},  # 0.38 cal per 1ml
+    "Almond Milk (unsweetened)": {"calorie": 0.15, "unit": "ml", "type": "liquid"},  # 0.15 cal per 1ml
     "Butter": 717,
     "Cream Cheese": 342,
 
@@ -101,11 +101,11 @@ foods = {
     "Water": 0,
     "Black Coffee": 1,
     "Green Tea": 0,
-    "Orange Juice (fresh)": 45,
-    "Cola (regular)": 42,
-    "Beer (lager)": 43,
-    "Wine (red)": 85,
-    "Milk (whole)": 61,
+    "Orange Juice (fresh)": {"calorie": 0.45, "unit": "ml", "type": "liquid"},  # 0.45 cal per 1ml
+    "Cola (regular)": {"calorie": 0.42, "unit": "ml", "type": "liquid"},  # 0.42 cal per 1ml
+    "Beer (lager)": {"calorie": 0.43, "unit": "ml", "type": "liquid"},  # 0.43 cal per 1ml
+    "Wine (red)": {"calorie": 0.85, "unit": "ml", "type": "liquid"},  # 0.85 cal per 1ml
+    "Milk (whole)": {"calorie": 0.61, "unit": "ml", "type": "liquid"},  # 0.61 cal per 1ml
 
     # Snacks & Sweets (per 100g)
     "Dark Chocolate (70-85% cocoa)": 598,
