@@ -269,3 +269,14 @@ const styles = StyleSheet.create({
   totalsValue: { fontWeight: 'bold', fontSize: 18, color: '#222' },
   // ...existing code...
 });
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Main">
+        <Stack.Screen name="Main" component={MainScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="DailyConsumption" component={DailyConsumptionScreen} options={{ title: 'Daily Consumption' }} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
