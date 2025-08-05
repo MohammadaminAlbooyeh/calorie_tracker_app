@@ -6,14 +6,13 @@ from pymongo import MongoClient
 client = MongoClient("mongodb://localhost:27017/")
 db = client["calorie_tracker"]
 foods_collection = db["foods"]
+food_log_collection = db["food_log"]
 
 app = FastAPI()
 
 class FoodEntry(BaseModel):
     name: str
     quantity: int
-
-food_log = []
 
 def get_food_info(user_input):
     """Find food in MongoDB, case-insensitive."""
@@ -39,7 +38,7 @@ def add_food(entry: FoodEntry):
     unit = food_info["unit"]
     calories = calorie_per_unit * quantity
 
-    food_log.append({
+    food_log_collection.insert_one({
         "name": food_info["name"],
         "quantity": quantity,
         "unit": unit,
@@ -49,11 +48,12 @@ def add_food(entry: FoodEntry):
 
 @app.get("/foods")
 def get_foods():
-    return {"foods": food_log}
+    foods = list(food_log_collection.find({}, {"_id": 0}))
+    return {"foods": foods}
 
 @app.delete("/foods")
 def clear_foods():
-    food_log.clear()
+    food_log_collection.delete_many({})
     return {"message": "All foods cleared!"}
 
 @app.get("/food_suggestions")

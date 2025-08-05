@@ -1,6 +1,8 @@
+import 'react-native-gesture-handler';
 import React, { useState, useEffect, useCallback } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 import DailyConsumptionScreen from './DailyConsumptionScreen';
 import { View, Text, StyleSheet, Image, FlatList, ScrollView, TextInput, Button, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker'; // You might not need this anymore if unit is auto-set
@@ -10,6 +12,7 @@ import { Calendar } from 'react-native-calendars';
 const API_BASE_URL = 'http://localhost:8000'; // **IMPORTANT: Change this to your backend IP/URL if not running on localhost or on a physical device**
 
 const Stack = createStackNavigator();
+const Drawer = createDrawerNavigator();
 
 function MainScreen({ navigation }) {
   const [showCalendar, setShowCalendar] = useState(false);
@@ -19,7 +22,6 @@ function MainScreen({ navigation }) {
   const [unit, setUnit] = useState('');
   const [error, setError] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
-  const [showMenu, setShowMenu] = useState(false);
   const [loading, setLoading] = useState(false);
   const [availableFoods, setAvailableFoods] = useState({});
 
@@ -117,39 +119,10 @@ function MainScreen({ navigation }) {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#fff' }}>
-      {/* Hamburger icon top left */}
-      <View style={{ position: 'absolute', top: 60, left: 20, zIndex: 20 }}>
-        <TouchableOpacity onPress={() => setShowMenu(true)}>
-          <Text style={{ fontSize: 32, fontWeight: 'bold' }}>≡</Text>
-        </TouchableOpacity>
-      </View>
-      {/* Drawer menu */}
-      {showMenu && (
-        <View style={{ position: 'absolute', top: 0, left: 0, width: 240, height: '100%', backgroundColor: '#fff', elevation: 8, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, zIndex: 30, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'stretch', borderTopRightRadius: 16, borderBottomRightRadius: 16 }}>
-          <TouchableOpacity onPress={() => setShowMenu(false)} style={{ alignSelf: 'flex-end', padding: 16 }}>
-            <Text style={{ fontSize: 24 }}>×</Text>
-          </TouchableOpacity>
-          <View style={{ flex: 1, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 32 }}>Menu</Text>
-            <TouchableOpacity
-              style={{ width: '100%', paddingVertical: 18, marginBottom: 18, backgroundColor: '#22c55e', borderRadius: 8, alignItems: 'center' }}
-              onPress={() => { setShowCalendar(true); setShowMenu(false); }}
-            >
-              <Text style={{ color: '#fff', fontSize: 18 }}>Calendar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{ width: '100%', paddingVertical: 18, marginBottom: 18, backgroundColor: '#0ea5e9', borderRadius: 8, alignItems: 'center' }}
-              onPress={() => {
-                setShowMenu(false);
-                navigation.navigate('DailyConsumption');
-              }}
-            >
-              <Text style={{ color: '#fff', fontSize: 18 }}>Daily Consumption</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.openDrawer()} style={{ position: 'absolute', left: 20, top: 60 }}>
+          <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#fff' }}>≡</Text>
+        </TouchableOpacity>
         <Text style={styles.headerText}>Calorie Tracker</Text>
       </View>
       {showCalendar && (
@@ -204,7 +177,7 @@ function MainScreen({ navigation }) {
       ) : (
         <FlatList
           data={foods}
-          keyExtractor={item => item.id ? item.id.toString() : item.name + item.quantity + item.calories + Math.random()}
+          keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
             <View style={styles.foodRow}>
               <Text style={styles.foodName}>{item.name} x{item.quantity} {item.unit}</Text>
@@ -275,13 +248,29 @@ const styles = StyleSheet.create({
   totalsValue: { fontWeight: 'bold', fontSize: 18, color: '#222' },
 });
 
+function AppDrawer() {
+  return (
+    <Drawer.Navigator 
+      initialRouteName="Home"
+      screenOptions={{
+        drawerStyle: {
+          backgroundColor: '#fff',
+          width: 240,
+        },
+      }}
+    >
+      <Drawer.Screen name="Home" component={MainScreen} />
+      <Drawer.Screen name="Daily Consumption" component={DailyConsumptionScreen} />
+    </Drawer.Navigator>
+  );
+}
+
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Main">
-        <Stack.Screen name="Main" component={MainScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="DailyConsumption" component={DailyConsumptionScreen} options={{ title: 'Daily Consumption' }} />
-      </Stack.Navigator>
+      <View style={styles.container}>
+        <AppDrawer />
+      </View>
     </NavigationContainer>
   );
 }
