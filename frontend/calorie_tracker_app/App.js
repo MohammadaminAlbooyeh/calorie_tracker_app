@@ -23,7 +23,6 @@ function MainScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [availableFoods, setAvailableFoods] = useState({});
 
-  // ...existing code...
   // Function to fetch all foods from the backend
   const fetchFoods = useCallback(async () => {
     setLoading(true);
@@ -63,11 +62,18 @@ function MainScreen({ navigation }) {
     fetchFoodSuggestions();
   }, [fetchFoods, fetchFoodSuggestions]);
 
-  // Set unit automatically when foodName changes, based on backend data
+  // Set unit automatically when foodName changes, based on backend data (CASE-INSENSITIVE)
   useEffect(() => {
-    const trimmedFoodName = foodName.trim();
-    if (trimmedFoodName && availableFoods[trimmedFoodName]) {
-      setUnit(availableFoods[trimmedFoodName]);
+    const trimmedFoodName = foodName.trim().toLowerCase();
+    if (trimmedFoodName) {
+      const foodKey = Object.keys(availableFoods).find(
+        key => key.toLowerCase() === trimmedFoodName
+      );
+      if (foodKey) {
+        setUnit(availableFoods[foodKey]);
+      } else {
+        setUnit('');
+      }
     } else {
       setUnit('');
     }
@@ -267,7 +273,6 @@ const styles = StyleSheet.create({
   },
   totalsLabel: { fontWeight: 'bold', fontSize: 18, color: '#444' },
   totalsValue: { fontWeight: 'bold', fontSize: 18, color: '#222' },
-  // ...existing code...
 });
 
 export default function App() {

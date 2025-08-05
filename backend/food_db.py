@@ -116,3 +116,10 @@ foods = {
     "Honey": {"calorie": 3.04, "unit": "g", "type": "weight"}, # 304 cal/100g
     "Sugar (granulated)": {"calorie": 3.87, "unit": "g", "type": "weight"}, # 387 cal/100g
 }
+
+# Case-insensitive lookup for foods
+foods_lower = {k.lower(): v for k, v in foods.items()}
+
+def get_food_info(name):
+    # Returns food info for any capitalization
+    return foods_lower.get(name.strip().lower())

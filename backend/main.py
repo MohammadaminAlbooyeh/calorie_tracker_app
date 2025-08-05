@@ -1,6 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from food_db import foods
+from pymongo import MongoClient
+
+# MongoDB setup
+client = MongoClient("mongodb://localhost:27017/")
+db = client["calorie_tracker"]
+foods_collection = db["foods"]
 
 app = FastAPI()
 
@@ -10,12 +15,10 @@ class FoodEntry(BaseModel):
 
 food_log = []
 
-def find_food_key(user_input):
-    """Find the correct food key in foods dict, case-insensitive."""
-    for key in foods.keys():
-        if key.lower() == user_input.lower():
-            return key
-    return None
+def get_food_info(user_input):
+    """Find food in MongoDB, case-insensitive."""
+    food = foods_collection.find_one({"name": {"$regex": f"^{user_input}$", "$options": "i"}})
+    return food
 
 @app.get("/")
 def read_root():
@@ -25,27 +28,24 @@ def read_root():
 def add_food(entry: FoodEntry):
     name_input = entry.name.strip()
     quantity = entry.quantity
-    food_key = find_food_key(name_input)
+    food_info = get_food_info(name_input)
 
-    if not food_key:
+    if not food_info:
         raise HTTPException(status_code=400, detail="Food not found in database.")
     if quantity <= 0:
         raise HTTPException(status_code=400, detail="Quantity must be positive.")
 
-    # Access calorie and unit from the updated food_db structure
-    food_info = foods[food_key]
     calorie_per_unit = food_info["calorie"]
-    unit = food_info["unit"] # Get the unit from the database
-    
+    unit = food_info["unit"]
     calories = calorie_per_unit * quantity
-    
+
     food_log.append({
-        "name": food_key,
+        "name": food_info["name"],
         "quantity": quantity,
-        "unit": unit, # Store the unit in the log
+        "unit": unit,
         "calories": calories
     })
-    return {"message": f"{quantity} {unit} x {food_key} added!", "calories": calories}
+    return {"message": f"{quantity} {unit} x {food_info['name']} added!", "calories": calories}
 
 @app.get("/foods")
 def get_foods():
@@ -56,10 +56,9 @@ def clear_foods():
     food_log.clear()
     return {"message": "All foods cleared!"}
 
-# Optional: Add an endpoint to get all food names and their units for frontend suggestions
 @app.get("/food_suggestions")
 def get_food_suggestions():
     suggestions = {}
-    for food_name, food_data in foods.items():
-        suggestions[food_name] = food_data["unit"]
+    for food in foods_collection.find():
+        suggestions[food["name"].lower()] = food["unit"]
     return suggestions
