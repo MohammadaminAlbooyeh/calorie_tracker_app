@@ -1,14 +1,19 @@
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from food_db import foods
+from pymongo import MongoClient
 
 app = FastAPI()
+
+# MongoDB setup
+client = MongoClient("mongodb://localhost:27017/")
+db = client["calorie_tracker"]
+food_collection = db["food_log"]
 
 class FoodEntry(BaseModel):
     name: str
     quantity: int
-
-food_log = []
 
 def find_food_key(user_input):
     """Find the correct food key in foods dict, case-insensitive."""
@@ -32,31 +37,30 @@ def add_food(entry: FoodEntry):
     if quantity <= 0:
         raise HTTPException(status_code=400, detail="Quantity must be positive.")
 
-    # Access calorie and unit from the updated food_db structure
     food_info = foods[food_key]
     calorie_per_unit = food_info["calorie"]
-    unit = food_info["unit"] # Get the unit from the database
-    
+    unit = food_info["unit"]
     calories = calorie_per_unit * quantity
-    
-    food_log.append({
+
+    # Store in MongoDB
+    food_collection.insert_one({
         "name": food_key,
         "quantity": quantity,
-        "unit": unit, # Store the unit in the log
+        "unit": unit,
         "calories": calories
     })
     return {"message": f"{quantity} {unit} x {food_key} added!", "calories": calories}
 
 @app.get("/foods")
 def get_foods():
-    return {"foods": food_log}
+    foods_list = list(food_collection.find({}, {"_id": 0}))
+    return {"foods": foods_list}
 
 @app.delete("/foods")
 def clear_foods():
-    food_log.clear()
+    food_collection.delete_many({})
     return {"message": "All foods cleared!"}
 
-# Optional: Add an endpoint to get all food names and their units for frontend suggestions
 @app.get("/food_suggestions")
 def get_food_suggestions():
     suggestions = {}

@@ -192,6 +192,24 @@ function MainScreen({ navigation }) {
           )}
         </TouchableOpacity>
         {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        {/* Progress Bar */}
+        {/* Dynamic color for progress bar */}
+        {(() => {
+          const percent = Math.min((totalCalories / 2000) * 100, 100);
+          let barColor = '#22c55e'; // green
+          if (percent > 80) barColor = '#ef4444'; // red
+          else if (percent > 50) barColor = '#facc15'; // yellow
+          return (
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBar, { width: `${percent}%`, backgroundColor: barColor }]} />
+              <View style={styles.progressBarLabelContainer}>
+                <Text style={[styles.progressLabel, { backgroundColor: barColor }]}>{`${Math.round(percent)}%`}</Text>
+                <Text style={styles.progressText}> of a 2000 cal diet</Text>
+              </View>
+            </View>
+          );
+        })()}
       </View>
       {loading && foods.length === 0 ? (
         <ActivityIndicator size="large" color="#22c55e" style={{ marginTop: 20 }} />
@@ -268,6 +286,48 @@ const styles = StyleSheet.create({
   totalsLabel: { fontWeight: 'bold', fontSize: 18, color: '#444' },
   totalsValue: { fontWeight: 'bold', fontSize: 18, color: '#222' },
   // ...existing code...
+  progressBarContainer: {
+    height: 32,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 8,
+    marginVertical: 12,
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  progressBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: '#22c55e',
+    borderRadius: 8,
+    zIndex: 1,
+  },
+  progressBarLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 2,
+    marginLeft: 12,
+  },
+  progressLabel: {
+    fontWeight: 'bold',
+    color: '#fff',
+    fontSize: 16,
+    backgroundColor: '#22c55e',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressText: {
+    color: '#444',
+    fontSize: 15,
+    marginLeft: 8,
+    fontWeight: '500',
+  },
 });
 
 export default function App() {
