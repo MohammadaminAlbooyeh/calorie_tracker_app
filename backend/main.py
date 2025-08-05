@@ -1,69 +1,145 @@
-
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from food_db import foods
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, validator
+from datetime import datetime
+from typing import Optional
 from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
+import os
+from bson import ObjectId
 
 app = FastAPI()
 
-# MongoDB setup
-client = MongoClient("mongodb://localhost:27017/")
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Database Connection
+client = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
 db = client["calorie_tracker"]
-food_collection = db["food_log"]
+foods_col = db["foods"]
+logs_col = db["food_logs"]
+
+# Sample Food Data
+DEFAULT_FOODS = {
+    "apple": {"calories": 52, "unit": "piece"},
+    "banana": {"calories": 89, "unit": "piece"},
+    "chicken breast": {"calories": 165, "unit": "100g"},
+    "rice": {"calories": 130, "unit": "cup"},
+    "bread": {"calories": 79, "unit": "slice"},
+    "egg": {"calories": 68, "unit": "piece"},
+    "milk": {"calories": 103, "unit": "cup"},
+    "pasta": {"calories": 131, "unit": "cup"},
+}
 
 class FoodEntry(BaseModel):
     name: str
-    quantity: int
+    quantity: float
+    date: Optional[str] = None
 
-def find_food_key(user_input):
-    """Find the correct food key in foods dict, case-insensitive."""
-    for key in foods.keys():
-        if key.lower() == user_input.lower():
-            return key
-    return None
+    @validator('quantity')
+    def validate_quantity(cls, v):
+        if v <= 0:
+            raise ValueError("Quantity must be positive")
+        return v
+
+class FoodLog(FoodEntry):
+    unit: str
+    calories: float
+
+@app.on_event("startup")
+async def initialize_db():
+    # Insert default foods if collection is empty
+    if foods_col.count_documents({}) == 0:
+        foods_col.insert_many([
+            {"name": k, **v} for k, v in DEFAULT_FOODS.items()
+        ])
 
 @app.get("/")
-def read_root():
-    return {"message": "hi from FastAPI!"}
-
-@app.post("/add_food")
-def add_food(entry: FoodEntry):
-    name_input = entry.name.strip()
-    quantity = entry.quantity
-    food_key = find_food_key(name_input)
-
-    if not food_key:
-        raise HTTPException(status_code=400, detail="Food not found in database.")
-    if quantity <= 0:
-        raise HTTPException(status_code=400, detail="Quantity must be positive.")
-
-    food_info = foods[food_key]
-    calorie_per_unit = food_info["calorie"]
-    unit = food_info["unit"]
-    calories = calorie_per_unit * quantity
-
-    # Store in MongoDB
-    food_collection.insert_one({
-        "name": food_key,
-        "quantity": quantity,
-        "unit": unit,
-        "calories": calories
-    })
-    return {"message": f"{quantity} {unit} x {food_key} added!", "calories": calories}
-
-@app.get("/foods")
-def get_foods():
-    foods_list = list(food_collection.find({}, {"_id": 0}))
-    return {"foods": foods_list}
-
-@app.delete("/foods")
-def clear_foods():
-    food_collection.delete_many({})
-    return {"message": "All foods cleared!"}
+async def root():
+    return {"status": "Calorie Tracker API is running"}
 
 @app.get("/food_suggestions")
-def get_food_suggestions():
-    suggestions = {}
-    for food_name, food_data in foods.items():
-        suggestions[food_name] = food_data["unit"]
-    return suggestions
+async def get_food_suggestions():
+    foods = {item["name"]: item["unit"] for item in foods_col.find({})}
+    return foods
+
+@app.post("/add_food")
+async def add_food(entry: FoodEntry):
+    # Normalize food name
+    food_name = entry.name.strip().lower()
+    
+    # Get food info from database
+    food_info = foods_col.find_one({"name": food_name})
+    if not food_info:
+        raise HTTPException(400, detail="Food not found in database")
+    
+    # Calculate calories
+    calories = food_info["calories"] * entry.quantity
+    
+    # Create log entry
+    log_entry = {
+        "name": food_name,
+        "quantity": entry.quantity,
+        "unit": food_info["unit"],
+        "calories": calories,
+        "date": entry.date or datetime.now().strftime("%Y-%m-%d")
+    }
+    
+    # Insert into database
+    result = logs_col.insert_one(log_entry)
+    log_entry["_id"] = str(result.inserted_id)
+    
+    return {
+        "message": "Food added successfully",
+        "data": log_entry
+    }
+
+@app.get("/foods")
+async def get_foods(date: Optional[str] = None):
+    query = {}
+    if date:
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+            query["date"] = date
+        except ValueError:
+            raise HTTPException(400, detail="Invalid date format. Use YYYY-MM-DD")
+    
+    foods = list(logs_col.find(query, {"_id": 0}))
+    return {"foods": foods}
+
+@app.delete("/foods")
+async def clear_foods():
+    logs_col.delete_many({})
+    return {"message": "All food logs cleared"}
+
+@app.get("/foods_by_date/{date}")
+async def get_foods_by_date(date: str):
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(400, detail="Invalid date format. Use YYYY-MM-DD")
+    
+    foods = list(logs_col.find({"date": date}, {"_id": 0}))
+    return {"foods": foods}
+
+@app.get("/total_calories/{date}")
+async def get_total_calories(date: str):
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(400, detail="Invalid date format. Use YYYY-MM-DD")
+    
+    pipeline = [
+        {"$match": {"date": date}},
+        {"$group": {"_id": None, "total": {"$sum": "$calories"}}}
+    ]
+    
+    result = list(logs_col.aggregate(pipeline))
+    total = result[0]["total"] if result else 0
+    
+    return {"date": date, "total_calories": total}
