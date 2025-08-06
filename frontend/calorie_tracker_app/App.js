@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Alert, Dimensions } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
@@ -43,7 +42,9 @@ function MainScreen({ navigation }) {
     }
   };
   
+  // Optimize rendering and avoid redundant updates
   const fetchTodayFoods = useCallback(async () => {
+    if (loading) return; // Prevent multiple simultaneous fetches
     setLoading(true);
     try {
       const date = new Date().toISOString().split('T')[0];
@@ -58,8 +59,7 @@ function MainScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
-  }, []);
-
+  }, [API_BASE_URL]);
 
   useEffect(() => {
     fetchFoodSuggestions();
@@ -110,7 +110,8 @@ function MainScreen({ navigation }) {
     }
   };
 
-  const handleDeleteFood = async (foodId) => {
+  // Memoize delete handler to avoid re-renders
+  const handleDeleteFood = useCallback(async (foodId) => {
     try {
       const response = await fetch(`${API_BASE_URL}/food/${foodId}`, {
         method: 'DELETE',
@@ -122,7 +123,7 @@ function MainScreen({ navigation }) {
     } catch (err) {
       setError(err.message);
     }
-  };
+  }, [API_BASE_URL, fetchTodayFoods]);
 
   // Navigation (for sidebar buttons)
   // Pass foods to DailyConsumptionScreen
@@ -207,8 +208,8 @@ function MainScreen({ navigation }) {
                   <Text style={{ flex: 1, fontWeight: 'bold', textAlign: 'center' }}>Cal</Text>
                   <View style={{ flex: 0.5 }} />{/* For spacing */}
                 </View>
-                {foods.map((item, idx) => (
-                  <View key={idx} style={{ flexDirection: 'row', padding: 8, borderTopWidth: idx === 0 ? 0 : 1, borderColor: '#eee', alignItems: 'center' }}>
+                {foods.map((item) => (
+                  <View key={item._id} style={{ flexDirection: 'row', padding: 8, borderTopWidth: 1, borderColor: '#eee', alignItems: 'center' }}>
                     <Text style={{ flex: 2 }}>{item.name}</Text>
                     <Text style={{ flex: 1, textAlign: 'center' }}>{item.quantity}</Text>
                     <Text style={{ flex: 1, textAlign: 'center' }}>{Math.round(item.calories)}</Text>
