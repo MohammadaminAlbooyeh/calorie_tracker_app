@@ -3,5 +3,5 @@ fastapi
 uvicorn
 pydantic
 pymongo
-bson
+python-dotenv
 
