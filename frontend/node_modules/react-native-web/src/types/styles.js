@@ -188,7 +188,7 @@ export type LayoutStyles = {|
     | 'flex-start'
     | 'stretch'
   ),
-  aspectRatio?: ?number,
+  aspectRatio?: ?NumberOrString,
   backfaceVisibility?: ?VisiblilityValue,
   borderWidth?: ?DimensionValue,
   borderBlockWidth?: ?DimensionValue,
@@ -306,7 +306,7 @@ export type LayoutStyles = {|
 export type ShadowStyles = {|
   // @deprecated
   shadowColor?: ?ColorValue,
-  shadowOffset?: {|
+  shadowOffset?: ?{|
     width?: DimensionValue,
     height?: DimensionValue
   |},
