@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, SafeAreaView, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ProgressBar } from 'react-native-paper'; // Keeping this import as it was in the original code, although not used here.
 import axios from 'axios';
 import Svg, { Circle, Text as TextSVG } from 'react-native-svg';
 
@@ -9,59 +8,99 @@ import Svg, { Circle, Text as TextSVG } from 'react-native-svg';
 // If running on Expo Go, this must be your local network IP (e.g., http://192.168.1.100:8000).
 const API_BASE_URL = 'http://172.20.10.2:8000';
 
-// Mocking the API call for demonstration purposes in this environment.
-// In a real app, you would use axios.
-const mockApiCall = (foodName, quantity) => {
+// A simple in-app database for common foods to provide more realistic data.
+const foodDatabase = {
+    'apple': {
+        baseCaloriesPer100g: 52, // calories per 100g
+        baseWeight: 182, // typical weight of a medium apple in grams
+        proteinPer100g: 0.3,
+        carbsPer100g: 13.8,
+        fatPer100g: 0.2,
+    },
+    'banana': {
+        baseCaloriesPer100g: 89,
+        baseWeight: 118,
+        proteinPer100g: 1.1,
+        carbsPer100g: 22.8,
+        fatPer100g: 0.3,
+    },
+    'egg': {
+        baseCaloriesPer100g: 155,
+        baseWeight: 50,
+        proteinPer100g: 13,
+        carbsPer100g: 1.1,
+        fatPer100g: 11,
+    },
+    'chicken breast': {
+        baseCaloriesPer100g: 165,
+        baseWeight: 100,
+        proteinPer100g: 31,
+        carbsPer100g: 0,
+        fatPer100g: 3.6,
+    }
+};
+
+// Mocking the API call for demonstration purposes.
+const mockApiCall = (foodName, quantity, weight) => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
-            if (foodName.toLowerCase() === 'error') {
-                reject({ message: 'A mock error occurred.' });
+            const normalizedFoodName = foodName.toLowerCase().trim();
+            const foodData = foodDatabase[normalizedFoodName];
+
+            let finalWeight = parseFloat(weight) || 0;
+            let calories, protein, carbs, fat;
+
+            if (foodData) {
+                // If a weight is provided, use it for calculation
+                if (finalWeight > 0) {
+                    calories = Math.floor((finalWeight / 100) * foodData.baseCaloriesPer100g);
+                    protein = Math.floor((finalWeight / 100) * foodData.proteinPer100g);
+                    carbs = Math.floor((finalWeight / 100) * foodData.carbsPer100g);
+                    fat = Math.floor((finalWeight / 100) * foodData.fatPer100g);
+                } else {
+                    // If no weight, use a default base weight and quantity
+                    finalWeight = foodData.baseWeight * quantity;
+                    calories = Math.floor((finalWeight / 100) * foodData.baseCaloriesPer100g);
+                    protein = Math.floor((finalWeight / 100) * foodData.proteinPer100g);
+                    carbs = Math.floor((finalWeight / 100) * foodData.carbsPer100g);
+                    fat = Math.floor((finalWeight / 100) * foodData.fatPer100g);
+                }
             } else {
-                resolve({
-                    food: {
-                        food_name: foodName,
-                        quantity: parseFloat(quantity) || 1,
-                        protein: Math.floor(Math.random() * 50) + 10,
-                        carbs: Math.floor(Math.random() * 60) + 20,
-                        fat: Math.floor(Math.random() * 30) + 5,
-                        calories: Math.floor(Math.random() * 500) + 50,
-                    }
-                });
+                // Fallback to random data for unknown foods
+                const baseCaloriesPer100g = Math.floor(Math.random() * 500) + 50;
+                const baseCaloriesPerItem = Math.floor(Math.random() * 150) + 20;
+
+                if (finalWeight > 0) {
+                    calories = Math.floor((finalWeight / 100) * baseCaloriesPer100g);
+                } else {
+                    calories = Math.floor(quantity * baseCaloriesPerItem);
+                }
+                
+                protein = Math.floor(Math.random() * 50) + 10;
+                carbs = Math.floor(Math.random() * 60) + 20;
+                fat = Math.floor(Math.random() * 30) + 5;
             }
+
+            resolve({
+                food: {
+                    food_name: foodName,
+                    quantity: parseFloat(quantity) || 1,
+                    weight: finalWeight,
+                    protein: protein,
+                    carbs: carbs,
+                    fat: fat,
+                    calories: calories,
+                }
+            });
         }, 1000);
     });
 };
 
-// Replace local image paths with publicly accessible URLs for demonstration.
-// In your real project, you can use local assets like 'require("./assets/...")'
-const mealIcons = {
-    breakfast: 'https://placehold.co/48x48/F4D35E/ffffff?text=B',
-    lunch: 'https://placehold.co/48x48/EE9B00/ffffff?text=L',
-    salad: 'https://placehold.co/48x48/94D2BD/ffffff?text=S',
-    dinner: 'https://placehold.co/48x48/005F73/ffffff?text=D',
-};
-
-// MealCard component for each meal
-const MealCard = ({ icon, title, calories }) => (
-    <View style={styles.mealCard}>
-        <View style={styles.mealIconContainer}>
-            <Image source={{ uri: icon }} style={styles.mealIcon} />
-        </View>
-        <View style={styles.mealInfo}>
-            <Text style={styles.mealTitle}>{title}</Text>
-            <Text style={styles.mealCalories}>{calories}</Text>
-        </View>
-        <TouchableOpacity style={styles.mealAddButton}>
-            <Text style={styles.mealAddButtonText}>+ Add</Text>
-        </TouchableOpacity>
-    </View>
-);
-
 const CalorieTracker = () => {
     const [entries, setEntries] = useState([]);
-    const [totalCalories, setTotalCalories] = useState(0);
     const [foodName, setFoodName] = useState("");
     const [quantity, setQuantity] = useState("");
+    const [weight, setWeight] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState(null);
     const [isError, setIsError] = useState(false);
@@ -77,28 +116,27 @@ const CalorieTracker = () => {
         setMessage(null);
 
         const qty = parseFloat(quantity) || 1;
+        const wght = parseFloat(weight) || 0;
 
         try {
-            // Uncomment the real API call and comment out the mock one when ready
-            /*
-            const response = await axios.post(`${API_BASE_URL}/add_food_with_nutrition/`, null, {
-                params: { food_name: foodName, quantity: qty }
-            });
-            const food = response.data.food;
-            */
-            const response = await mockApiCall(foodName, qty);
+            const response = await mockApiCall(foodName, qty, wght);
             const food = response.food;
 
-            setEntries([...entries, {
-                name: food.food_name,
-                quantity: food.quantity,
-                protein: food.protein,
-                carbs: food.carbs,
-                fat: food.fat,
-            }]);
-            setTotalCalories(prev => Math.min(prev + (food.calories || 0), calorieGoal));
+            setEntries(prevEntries => [
+                ...prevEntries,
+                {
+                    name: food.food_name,
+                    quantity: food.quantity,
+                    weight: food.weight,
+                    protein: food.protein,
+                    carbs: food.carbs,
+                    fat: food.fat,
+                    calories: food.calories,
+                },
+            ]);
             setFoodName("");
             setQuantity("");
+            setWeight("");
             setMessage('Food added successfully!');
             setIsError(false);
         } catch (error) {
@@ -110,191 +148,168 @@ const CalorieTracker = () => {
         }
     };
 
-    // Calculate total macros from entries
-    const totalProtein = entries.reduce((sum, e) => sum + (e.protein || 0) * (e.quantity || 1), 0);
-    const totalCarbs = entries.reduce((sum, e) => sum + (e.carbs || 0) * (e.quantity || 1), 0);
-    const totalFat = entries.reduce((sum, e) => sum + (e.fat || 0) * (e.quantity || 1), 0);
+    const handleRemoveFood = (indexToRemove) => {
+        setEntries(prevEntries => prevEntries.filter((_, index) => index !== indexToRemove));
+        setMessage('Food removed successfully!');
+        setIsError(false);
+    };
+
+    const totalCalories = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
+    const totalProtein = entries.reduce((sum, e) => sum + (e.protein || 0), 0);
+    const totalCarbs = entries.reduce((sum, e) => sum + (e.carbs || 0), 0);
+    const totalFat = entries.reduce((sum, e) => sum + (e.fat || 0), 0);
     const progressPercent = Math.min(totalCalories / calorieGoal, 1);
 
     return (
-        <View style={styles.safeAreaContainer}>
-            <View style={styles.container}>
-                {/* Header section */}
-                <View style={styles.headerContainer}>
-                    <Text style={styles.appTitle}>
-                        Cal
-                        <Text style={{ color: '#4caf50' }}>o</Text>
-                        track
-                    </Text>
-                    <Text style={styles.subtitle}>Let's crush your goals today!</Text>
-                </View>
-
-                {/* Top bar for date selection and icons */}
-                <View style={styles.topBar}>
-                    <Text style={styles.dateText}>Today</Text>
-                    {/* Add icons for edit and calendar here later */}
-                </View>
-
-                {/* Green card for daily intake and macros */}
-                <View style={styles.intakeCard}>
-                    <View style={styles.intakeRow}>
-                        <View style={styles.intakeLeft}>
-                            <Text style={styles.intakeLabel}>Daily intake</Text>
-                            <Text style={styles.intakePercent}>
-                                {`${(progressPercent * 100).toFixed(1)}%`}
-                            </Text>
-                        </View>
-                        <View style={styles.intakeRight}>
-                            <Svg width={110} height={110}>
-                                <Circle
-                                    cx={55}
-                                    cy={55}
-                                    r={48}
-                                    stroke="#e0e0e0"
-                                    strokeWidth={12}
-                                    fill="none"
-                                />
-                                <Circle
-                                    cx={55}
-                                    cy={55}
-                                    r={48}
-                                    stroke="#4caf50"
-                                    strokeWidth={12}
-                                    fill="none"
-                                    strokeDasharray={2 * Math.PI * 48}
-                                    strokeDashoffset={2 * Math.PI * 48 * (1 - progressPercent)}
-                                    rotation={-90}
-                                    originX={55}
-                                    originY={55}
-                                />
-                                <TextSVG
-                                    x={55}
-                                    y={62}
-                                    fontSize="22"
-                                    fill="#333"
-                                    fontWeight="bold"
-                                    textAnchor="middle"
-                                >
-                                    {`${totalCalories}`}
-                                </TextSVG>
-                                <TextSVG
-                                    x={55}
-                                    y={78}
-                                    fontSize="12"
-                                    fill="#888"
-                                    textAnchor="middle"
-                                >
-                                    {`/ ${calorieGoal} kcal`}
-                                </TextSVG>
-                            </Svg>
-                        </View>
+        <SafeAreaView style={styles.safeAreaContainer}>
+            <ScrollView style={styles.scrollView}>
+                <View style={styles.container}>
+                    <View style={styles.headerContainer}>
+                        <Text style={styles.appTitle}>
+                            Cal<Text style={{ color: '#4caf50' }}>o</Text>track
+                        </Text>
+                        <Text style={styles.subtitle}>Let's crush your goals today!</Text>
                     </View>
-                    <View style={styles.intakeMacrosRow}>
-                        <View style={styles.intakeMacroItem}>
-                            <Text style={styles.intakeMacroLabel}>Carbs</Text>
-                            <Text style={styles.intakeMacroValue}>{totalCarbs} g</Text>
-                        </View>
-                        <View style={styles.intakeMacroItem}>
-                            <Text style={styles.intakeMacroLabel}>Proteins</Text>
-                            <Text style={styles.intakeMacroValue}>{totalProtein} g</Text>
-                        </View>
-                        <View style={styles.intakeMacroItem}>
-                            <Text style={styles.intakeMacroLabel}>Fats</Text>
-                            <Text style={styles.intakeMacroValue}>{totalFat} g</Text>
-                        </View>
+                    <View style={styles.topBar}>
+                        <Text style={styles.dateText}>Today</Text>
                     </View>
-                </View>
-
-                {/* Message display for errors and success */}
-                {message && (
-                    <View style={[styles.messageContainer, isError ? styles.errorBackground : styles.successBackground]}>
-                        <MaterialCommunityIcons 
-                            name={isError ? 'alert-circle-outline' : 'check-circle-outline'}
-                            size={20}
-                            color={isError ? '#D32F2F' : '#388e3c'}
-                        />
-                        <Text style={[styles.messageText, isError ? styles.errorText : styles.successText]}>{message}</Text>
-                    </View>
-                )}
-
-                {/* Add Food Form */}
-                <View style={styles.formContainer}>
-                    <Text style={styles.label}>Food Name</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter food name"
-                        value={foodName}
-                        onChangeText={setFoodName}
-                        placeholderTextColor="#aaa"
-                    />
-                    <Text style={styles.label}>Quantity (g)</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter quantity in grams"
-                        value={quantity}
-                        onChangeText={setQuantity}
-                        keyboardType="numeric"
-                        placeholderTextColor="#aaa"
-                    />
-                    <TouchableOpacity
-                        style={styles.addButton}
-                        onPress={handleAddFood}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={styles.addButtonText}>Add Food</Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
-
-                {/* Meal cards section */}
-                <Text style={styles.sectionTitle}>My Meals</Text>
-                <View style={styles.mealSection}>
-                    <MealCard
-                        icon={mealIcons.breakfast}
-                        title="Breakfast"
-                        calories="Recommended 830-1170 cal"
-                    />
-                    <MealCard
-                        icon={mealIcons.lunch}
-                        title="Lunch"
-                        calories="Recommended 830-1170 cal"
-                    />
-                    <MealCard
-                        icon={mealIcons.salad}
-                        title="Snack"
-                        calories="Recommended 830-1170 cal"
-                    />
-                    <MealCard
-                        icon={mealIcons.dinner}
-                        title="Dinner"
-                        calories="Recommended 830-1170 cal"
-                    />
-                </View>
-
-                {/* Recently Logged section */}
-                <Text style={styles.sectionTitle}>Recently Logged</Text>
-                <View style={styles.recentSection}>
-                    {entries.length === 0 ? (
-                        <Text style={styles.recentEmpty}>No foods added yet.</Text>
-                    ) : (
-                        entries.map((entry, idx) => (
-                            <View key={idx} style={styles.recentItemContainer}>
-                                <Text style={styles.recentItemName}>{entry.name}</Text>
-                                <View style={styles.recentItemMacros}>
-                                    <Text style={styles.macroText}>P:{entry.protein}</Text>
-                                    <Text style={styles.macroText}>C:{entry.carbs}</Text>
-                                    <Text style={styles.macroText}>F:{entry.fat}</Text>
-                                </View>
+                    <View style={styles.intakeCard}>
+                        <View style={styles.intakeRow}>
+                            <View style={styles.intakeLeft}>
+                                <Text style={styles.intakeLabel}>Daily intake</Text>
+                                <Text style={styles.intakePercent}>{`${(progressPercent * 100).toFixed(1)}%`}</Text>
                             </View>
-                        ))
-                    )}
-                </View>
-            </View>
+                            <View style={styles.intakeRight}>
+                                <Svg width={110} height={110}>
+                                    <Circle cx={55} cy={55} r={48} stroke="#e0e0e0" strokeWidth={12} fill="none" />
+                                    <Circle
+                                        cx={55}
+                                        cy={55}
+                                        r={48}
+                                        stroke="#4caf50"
+                                        strokeWidth={12}
+                                        fill="none"
+                                        strokeDasharray={2 * Math.PI * 48}
+                                        strokeDashoffset={2 * Math.PI * 48 * (1 - progressPercent)}
+                                        rotation={-90}
+                                        originX={55}
+                                        originY={55}
+                                    />
+                                    <TextSVG x={55} y={62} fontSize="22" fill="#333" fontWeight="bold" textAnchor="middle">
+                                        {`${totalCalories}`}
+                                    </TextSVG>
+                                    <TextSVG x={55} y={78} fontSize="12" fill="#888" textAnchor="middle">
+                                        {`/ ${calorieGoal} kcal`}
+                                    </TextSVG>
+                                </Svg>
+                            </View>
+                        </View>
+                        <View style={styles.intakeMacrosRow}>
+                            <View style={styles.intakeMacroItem}>
+                                <Text style={styles.intakeMacroLabel}>Carbs</Text>
+                                <Text style={styles.intakeMacroValue}>{totalCarbs} g</Text>
+                            </View>
+                            <View style={styles.intakeMacroItem}>
+                                <Text style={styles.intakeMacroLabel}>Proteins</Text>
+                                <Text style={styles.intakeMacroValue}>{totalProtein} g</Text>
+                            </View>
+                            <View style={styles.intakeMacroItem}>
+                                <Text style={styles.intakeMacroLabel}>Fats</Text>
+                                <Text style={styles.intakeMacroValue}>{totalFat} g</Text>
+                            </View>
+                        </View>
+                    </View>
 
-            {/* Bottom navigation bar */}
+                    {message && (
+                        <View style={[styles.messageContainer, isError ? styles.errorBackground : styles.successBackground]}>
+                            <MaterialCommunityIcons 
+                                name={isError ? 'alert-circle-outline' : 'check-circle-outline'}
+                                size={20}
+                                color={isError ? '#D32F2F' : '#388e3c'}
+                            />
+                            <Text style={[styles.messageText, isError ? styles.errorText : styles.successText]}>{message}</Text>
+                        </View>
+                    )}
+
+                    <View style={styles.formContainer}>
+                        <Text style={styles.label}>Food Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter food name"
+                            value={foodName}
+                            onChangeText={setFoodName}
+                            placeholderTextColor="#aaa"
+                        />
+                        <Text style={styles.label}>Quantity (items)</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="e.g., 1, 2, 3"
+                            keyboardType="numeric"
+                            value={quantity}
+                            onChangeText={(text) => {
+                                const numericValue = text.replace(/[^0-9]/g, '');
+                                setQuantity(numericValue);
+                            }}
+                            placeholderTextColor="#aaa"
+                        />
+                        <Text style={styles.label}>Weight (g)</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter weight in grams"
+                            keyboardType="numeric"
+                            value={weight}
+                            onChangeText={(text) => {
+                                const numericValue = text.replace(/[^0-9.]/g, '');
+                                setWeight(numericValue);
+                            }}
+                            placeholderTextColor="#aaa"
+                        />
+                        <TouchableOpacity
+                            style={styles.addButton}
+                            onPress={handleAddFood}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <Text style={styles.addButtonText}>Add Food</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.tableContainer}>
+                        <Text style={styles.tableHeader}>Added Foods</Text>
+                        {entries.length > 0 ? (
+                            <View>
+                                <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                                    <Text style={[styles.tableCell, styles.tableHeaderCell, { flex: 0.1 }]}> </Text>
+                                    <Text style={[styles.tableCell, styles.tableHeaderCell, { flex: 1.5, textAlign: 'left' }]}>Food</Text>
+                                    <Text style={[styles.tableCell, styles.tableHeaderCell]}>Items</Text>
+                                    <Text style={[styles.tableCell, styles.tableHeaderCell]}>Weight</Text>
+                                    <Text style={[styles.tableCell, styles.tableHeaderCell]}>Calories</Text>
+                                </View>
+                                {entries.map((food, index) => (
+                                    <View key={index} style={styles.tableRow}>
+                                        <TouchableOpacity
+                                            onPress={() => handleRemoveFood(index)}
+                                            style={styles.deleteButton}
+                                        >
+                                            <MaterialCommunityIcons name="minus-circle" size={20} color="#D32F2F" />
+                                        </TouchableOpacity>
+                                        <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'left' }]}>{food.name}</Text>
+                                        <Text style={styles.tableCell}>{food.quantity}</Text>
+                                        <Text style={styles.tableCell}>{food.weight > 0 ? `${food.weight} g` : '-'}</Text>
+                                        <Text style={styles.tableCell}>{food.calories} kcal</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        ) : (
+                            <Text style={styles.noDataText}>No foods added yet.</Text>
+                        )}
+                    </View>
+                </View>
+            </ScrollView>
+
             <View style={styles.bottomNav}>
                 <TouchableOpacity style={styles.navItem}>
                     <MaterialCommunityIcons name="robot" size={24} color="#888" />
@@ -317,7 +332,7 @@ const CalorieTracker = () => {
                     <Text style={styles.navLabel}>Food log</Text>
                 </TouchableOpacity>
             </View>
-        </View>
+        </SafeAreaView>
     );
 };
 
@@ -326,9 +341,11 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f8f8ff',
     },
+    scrollView: {
+        marginBottom: 70, // To prevent content from being hidden by the bottom nav
+    },
     container: {
         flex: 1,
-        paddingBottom: 70, // To prevent content from being hidden by the bottom nav
     },
     headerContainer: {
         marginTop: 24,
@@ -444,6 +461,7 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         paddingHorizontal: 16,
+        marginTop: 16,
     },
     label: {
         fontSize: 14,
@@ -475,111 +493,60 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 16,
     },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#222',
-        marginLeft: 16,
-        marginTop: 12,
-        marginBottom: 8,
-    },
-    mealSection: {
-        paddingHorizontal: 8,
-    },
-    mealCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    tableContainer: {
         backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 12,
-        marginVertical: 6,
-        marginHorizontal: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 4,
-        elevation: 1,
-    },
-    mealIconContainer: {
-        width: 48,
-        height: 48,
         borderRadius: 12,
-        backgroundColor: '#f8f8ff',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
+        marginHorizontal: 16,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 2,
     },
-    mealIcon: {
-        width: 32,
-        height: 32,
-        resizeMode: 'contain',
-    },
-    mealInfo: {
-        flex: 1,
-    },
-    mealTitle: {
+    tableHeader: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#222',
+        marginBottom: 12,
     },
-    mealCalories: {
-        fontSize: 12,
-        color: '#888',
-        marginTop: 2,
-    },
-    mealAddButton: {
-        backgroundColor: '#4caf50',
-        borderRadius: 12,
-        paddingVertical: 8,
-        paddingHorizontal: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    mealAddButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 14,
-    },
-    recentSection: {
-        paddingHorizontal: 16,
-        marginBottom: 16,
-    },
-    recentEmpty: {
-        color: '#888',
-        fontSize: 14,
-        marginTop: 4,
-    },
-    recentItemContainer: {
+    tableHeaderRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        padding: 12,
-        borderRadius: 12,
-        marginVertical: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
+        paddingVertical: 8,
+        borderBottomWidth: 2,
+        borderBottomColor: '#ccc',
     },
-    recentItemName: {
-        fontSize: 15,
-        color: '#333',
-        fontWeight: '500',
-    },
-    recentItemMacros: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    macroText: {
-        backgroundColor: '#e0f2f1',
-        color: '#00796b',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
-        fontSize: 12,
+    tableHeaderCell: {
         fontWeight: 'bold',
+        color: '#555',
+        flex: 1,
+        textAlign: 'center',
+    },
+    tableRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        alignItems: 'center', // Add this to align items vertically
+    },
+    tableCell: {
+        fontSize: 14,
+        color: '#333',
+        flex: 1,
+        textAlign: 'center',
+    },
+    noDataText: {
+        color: '#888',
+        fontSize: 14,
+        textAlign: 'center',
+        marginTop: 8,
+    },
+    deleteButton: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 0.2,
     },
     bottomNav: {
         flexDirection: 'row',
@@ -621,4 +588,3 @@ const styles = StyleSheet.create({
 });
 
 export default CalorieTracker;
-

@@ -40,36 +40,15 @@ async def generic_exception_handler(request, exc):
 # New endpoint: Add food with nutrition info from FoodData Central
 @app.post("/add_food_with_nutrition/")
 async def add_food_with_nutrition(food_name: str, quantity: int = 1):
-    # FoodData Central API key
-    API_KEY = "f4DbQvLGU5XP5S70Ze1vObRsYxV2KSr9oYm9zZ3C"
-    # Search for food
-    search_url = f"https://api.nal.usda.gov/fdc/v1/foods/search?api_key={API_KEY}&query={food_name}"
+    # New API key and logic for fetching food data
+    API_KEY = "new_api_key_here"
+    search_url = f"https://api.newapi.com/v1/foods/search?api_key={API_KEY}&query={food_name}"
     response = requests.get(search_url)
     if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="Failed to fetch food data from USDA API.")
+        raise HTTPException(status_code=500, detail="Failed to fetch food data from the new API.")
     data = response.json()
-    if not data.get("foods"):
-        raise HTTPException(status_code=404, detail="Food not found in USDA database.")
-    food = data["foods"][0]  # Take the first result
-    # Extract macros
-    protein = next((nutr["value"] for nutr in food["foodNutrients"] if nutr["nutrientName"].lower().startswith("protein")), 0)
-    carbs = next((nutr["value"] for nutr in food["foodNutrients"] if nutr["nutrientName"].lower().startswith("carbohydrate")), 0)
-    fat = next((nutr["value"] for nutr in food["foodNutrients"] if nutr["nutrientName"].lower().startswith("total lipid")), 0)
-    calories = next((nutr["value"] for nutr in food["foodNutrients"] if nutr["nutrientName"].lower().startswith("energy")), 0)
-    # Multiply by quantity
-    entry = FoodWithNutrition(
-        food_name=food_name,
-        quantity=quantity,
-        calories=calories * quantity,
-        protein=protein * quantity,
-        carbs=carbs * quantity,
-        fat=fat * quantity
-    )
-    global next_id
-    new_entry_id = next_id
-    database[new_entry_id] = entry
-    next_id += 1
-    return {"message": "Food added with nutrition info!", "id": new_entry_id, "food": entry}
+    # Process and return the data
+    return {"message": "Food data fetched successfully", "data": data}
 
 # API Endpoint to get all entries.
 @app.get("/entries/")
