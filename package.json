@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "react-native-circular-progress": "^1.4.1",
+    "react-native-svg": "^15.12.1"
+  }
+}
