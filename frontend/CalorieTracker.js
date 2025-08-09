@@ -79,28 +79,29 @@ function CalorieTracker() {
                 style={{
                   ...styles.progressBar,
                   width: `${progressPercent * 100}%`,
-                  backgroundColor: `rgb(${Math.floor(76 + (progressPercent * 179))},${Math.floor(175 - (progressPercent * 175))},${Math.floor(80 - (progressPercent * 80))})`,
+                  // سبز روشن تا قرمز تیره
+                  backgroundColor: `rgb(${Math.floor(144 + (progressPercent * 111))},${Math.floor(238 - (progressPercent * 238))},${Math.floor(144 - (progressPercent * 144))})`,
                 }}
               />
               <Text style={styles.progressText}>
                 {`${(progressPercent * 100).toFixed(0)}%`}
               </Text>
               <Text style={styles.progressTextRight}>
-                {`of a ${calorieGoal} cal diet`}
+                {`${calorieGoal} cal`}
               </Text>
             </View>
             <View style={styles.intakeMacrosRow}>
               <View style={styles.intakeMacroItem}>
                 <Text style={styles.intakeMacroLabel}>Carbs</Text>
-                <Text style={styles.intakeMacroValue}>{totalCarbs} g</Text>
+                <Text style={styles.intakeMacroValue}>{entries.length === 0 ? '-' : `${totalCarbs} g`}</Text>
               </View>
               <View style={styles.intakeMacroItem}>
                 <Text style={styles.intakeMacroLabel}>Proteins</Text>
-                <Text style={styles.intakeMacroValue}>{totalProtein} g</Text>
+                <Text style={styles.intakeMacroValue}>{entries.length === 0 ? '-' : `${totalProtein} g`}</Text>
               </View>
               <View style={styles.intakeMacroItem}>
                 <Text style={styles.intakeMacroLabel}>Fats</Text>
-                <Text style={styles.intakeMacroValue}>{totalFat} g</Text>
+                <Text style={styles.intakeMacroValue}>{entries.length === 0 ? '-' : `${totalFat} g`}</Text>
               </View>
             </View>
           </View>
@@ -154,6 +155,13 @@ function CalorieTracker() {
                 <Text style={styles.addButtonText}>Add Food</Text>
               )}
             </TouchableOpacity>
+            <View style={styles.mealBoxesContainer}>
+              <View style={styles.mealBox}><Text style={styles.mealBoxText}>Breakfast</Text></View>
+              <View style={styles.mealBox}><Text style={styles.mealBoxText}>Lunch</Text></View>
+              <View style={styles.mealBox}><Text style={styles.mealBoxText}>Dinner</Text></View>
+              <View style={styles.mealBox}><Text style={styles.mealBoxText}>Snacks/Other</Text></View>
+              <View style={styles.mealBox}><Text style={styles.mealBoxText}>Water Tracker</Text></View>
+            </View>
           </View>
 
           <View style={styles.tableContainer}>
@@ -208,6 +216,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderColor: '#eee',
+    marginBottom: 32,
   },
   navButton: {
     backgroundColor: '#388e3c',
@@ -297,19 +306,22 @@ const styles = StyleSheet.create({
     top: 0,
   },
   progressText: {
-    marginLeft: 24,
-    fontSize: 20,
-    color: '#333',
-    fontWeight: 'bold',
-    zIndex: 1,
+  position: 'absolute',
+  left: 24,
+  top: 8,
+  fontSize: 24,
+  color: '#333',
+  fontWeight: 'bold',
+  zIndex: 1,
   },
   progressTextRight: {
-    position: 'absolute',
-    right: 16,
-    fontSize: 16,
-    color: '#333',
-    fontWeight: 'bold',
-    zIndex: 2,
+  position: 'absolute',
+  right: 16,
+  top: 32,
+  fontSize: 14,
+  color: '#333',
+  fontWeight: 'bold',
+  zIndex: 2,
   },
   intakeMacrosRow: {
     flexDirection: 'row',
@@ -445,6 +457,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flex: 0.2,
+  },
+  mealBoxesContainer: {
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
+    marginTop: 24,
+    marginBottom: 8,
+    paddingHorizontal: 8,
+  },
+  mealBox: {
+    backgroundColor: '#e0f7fa',
+    borderRadius: 16,
+    marginVertical: 6,
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+  },
+  mealBoxText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#388e3c',
   },
 });
 
