@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, SafeAreaView, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const calorieGoal = 2000;
 
 function CalorieTracker() {
+  const navigation = useNavigation();
   const [entries, setEntries] = useState([]);
   const [foodName, setFoodName] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -185,11 +187,40 @@ function CalorieTracker() {
           </View>
         </View>
       </ScrollView>
+      <View style={styles.bottomNav}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('CalorieTracker')}>
+          <Text style={styles.navButtonText}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('FoodLog')}>
+          <Text style={styles.navButtonText}>Food Log</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  bottomNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderColor: '#eee',
+  },
+  navButton: {
+    backgroundColor: '#388e3c',
+    paddingVertical: 10,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    marginHorizontal: 8,
+  },
+  navButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   safeAreaContainer: {
     flex: 1,
     backgroundColor: '#f8f8ff',
@@ -228,7 +259,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   intakeCard: {
-    backgroundColor: '#d6f5d6',
+  backgroundColor: '#fff',
     borderRadius: 24,
     padding: 20,
     marginHorizontal: 16,

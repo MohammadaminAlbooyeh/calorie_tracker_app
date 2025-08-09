@@ -1,25 +1,19 @@
-import React from 'react';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
+
+import * as React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import CalorieTracker from './CalorieTracker';
+import FoodLog from './FoodLog';
 
-const App = () => {
+const Stack = createNativeStackNavigator();
+
+export default function App() {
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                <CalorieTracker />
-            </View>
-        </SafeAreaView>
+        <NavigationContainer>
+            <Stack.Navigator initialRouteName="CalorieTracker">
+                <Stack.Screen name="CalorieTracker" component={CalorieTracker} options={{ title: 'Calorie Tracker' }} />
+                <Stack.Screen name="FoodLog" component={FoodLog} options={{ title: 'Food Log' }} />
+            </Stack.Navigator>
+        </NavigationContainer>
     );
-};
-
-const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    container: {
-        flex: 1,
-    }
-});
-
-export default App;
+}
