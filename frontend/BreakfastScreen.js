@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFood } from './FoodContext';
 
 export default function BreakfastScreen() {
+  const { entries, addFood, removeFood } = useFood();
   const [foodName, setFoodName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [weight, setWeight] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [isError, setIsError] = useState(false);
-  const [entries, setEntries] = useState([]);
 
   const handleRemoveFood = (indexToRemove) => {
-    setEntries(prevEntries => prevEntries.filter((_, index) => index !== indexToRemove));
+    removeFood(indexToRemove);
     setMessage('Food removed successfully!');
     setIsError(false);
   };
@@ -26,14 +27,15 @@ export default function BreakfastScreen() {
     setIsLoading(true);
     setMessage(null);
     setTimeout(() => {
-      setEntries(prevEntries => [
-        ...prevEntries,
-        {
-          name: foodName,
-          quantity: quantity,
-          weight: weight,
-        },
-      ]);
+      const qty = parseFloat(quantity) || 1;
+      const wght = parseFloat(weight) || 0;
+      const calories = Math.floor(qty * 100 + wght * 0.5);
+      addFood({
+        name: foodName,
+        quantity: qty,
+        weight: wght,
+        calories,
+      });
       setFoodName("");
       setQuantity("");
       setWeight("");
@@ -96,12 +98,14 @@ export default function BreakfastScreen() {
               <Text style={[styles.tableCell, styles.tableHeaderCell, { flex: 1.5, textAlign: 'left' }]}>Food</Text>
               <Text style={[styles.tableCell, styles.tableHeaderCell]}>Items</Text>
               <Text style={[styles.tableCell, styles.tableHeaderCell]}>Weight</Text>
+              <Text style={[styles.tableCell, styles.tableHeaderCell]}>Calories</Text>
             </View>
             {entries.map((food, index) => (
               <View key={index} style={styles.tableRow}>
                 <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'left' }]}>{food.name}</Text>
                 <Text style={styles.tableCell}>{food.quantity}</Text>
                 <Text style={styles.tableCell}>{food.weight ? `${food.weight} g` : '-'}</Text>
+                <Text style={styles.tableCell}>{food.calories}</Text>
                 <TouchableOpacity
                   onPress={() => handleRemoveFood(index)}
                   style={styles.deleteButton}

@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, SafeAreaView, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFood } from './FoodContext';
 
 const calorieGoal = 2000;
 
 function CalorieTracker() {
   const navigation = useNavigation();
-  const [entries, setEntries] = useState([]);
+  const { entries, addFood, removeFood } = useFood();
   const [foodName, setFoodName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [weight, setWeight] = useState("");
@@ -29,18 +30,15 @@ function CalorieTracker() {
     const protein = Math.floor(qty * 5);
     const carbs = Math.floor(qty * 10);
     const fat = Math.floor(qty * 2);
-    setEntries(prevEntries => [
-      ...prevEntries,
-      {
-        name: foodName,
-        quantity: qty,
-        weight: wght,
-        protein,
-        carbs,
-        fat,
-        calories,
-      },
-    ]);
+    addFood({
+      name: foodName,
+      quantity: qty,
+      weight: wght,
+      protein,
+      carbs,
+      fat,
+      calories,
+    });
     setFoodName("");
     setQuantity("");
     setWeight("");
@@ -50,7 +48,7 @@ function CalorieTracker() {
   };
 
   const handleRemoveFood = (indexToRemove) => {
-    setEntries(prevEntries => prevEntries.filter((_, index) => index !== indexToRemove));
+    removeFood(indexToRemove);
     setMessage('Food removed successfully!');
     setIsError(false);
   };
@@ -117,66 +115,27 @@ function CalorieTracker() {
             </View>
           ) : null}
 
-          <View style={styles.formContainer}>
-            <Text style={styles.label}>Food Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter food name"
-              value={foodName}
-              onChangeText={setFoodName}
-              placeholderTextColor="#aaa"
-            />
-            <Text style={styles.label}>Quantity (items)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., 1, 2, 3"
-              keyboardType="numeric"
-              value={quantity}
-              onChangeText={setQuantity}
-              placeholderTextColor="#aaa"
-            />
-            <Text style={styles.label}>Weight (g)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter weight in grams"
-              keyboardType="numeric"
-              value={weight}
-              onChangeText={setWeight}
-              placeholderTextColor="#aaa"
-            />
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={handleAddFood}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.addButtonText}>Add Food</Text>
-              )}
+          <View style={styles.mealBoxesContainer}>
+            <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('Breakfast')}>
+              <MaterialCommunityIcons name="food-croissant" size={24} color="#000" style={{ marginBottom: 4 }} />
+              <Text style={styles.mealBoxText}>Breakfast</Text>
             </TouchableOpacity>
-            <View style={styles.mealBoxesContainer}>
-               <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('Breakfast')}>
-                 <MaterialCommunityIcons name="food-croissant" size={24} color="#000" style={{ marginBottom: 4 }} />
-                 <Text style={styles.mealBoxText}>Breakfast</Text>
-               </TouchableOpacity>
-               <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('Lunch')}>
-                 <MaterialCommunityIcons name="food-fork-drink" size={24} color="#000" style={{ marginBottom: 4 }} />
-                 <Text style={styles.mealBoxText}>Lunch</Text>
-               </TouchableOpacity>
-               <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('Dinner')}>
-                 <MaterialCommunityIcons name="food-steak" size={24} color="#000" style={{ marginBottom: 4 }} />
-                 <Text style={styles.mealBoxText}>Dinner</Text>
-               </TouchableOpacity>
-               <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('SnacksOther')}>
-                 <MaterialCommunityIcons name="food-apple" size={24} color="#000" style={{ marginBottom: 4 }} />
-                 <Text style={styles.mealBoxText}>Snacks/Other</Text>
-               </TouchableOpacity>
-              <View style={styles.mealBox}>
-                <MaterialCommunityIcons name="cup-water" size={24} color="#000" style={{ marginBottom: 4 }} />
-                <Text style={styles.mealBoxText}>Water Tracker</Text>
-              </View>
-            </View>
+            <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('Lunch')}>
+              <MaterialCommunityIcons name="food-fork-drink" size={24} color="#000" style={{ marginBottom: 4 }} />
+              <Text style={styles.mealBoxText}>Lunch</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('Dinner')}>
+              <MaterialCommunityIcons name="food-steak" size={24} color="#000" style={{ marginBottom: 4 }} />
+              <Text style={styles.mealBoxText}>Dinner</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('SnacksOther')}>
+              <MaterialCommunityIcons name="food-apple" size={24} color="#000" style={{ marginBottom: 4 }} />
+              <Text style={styles.mealBoxText}>Snacks/Other</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('WaterTracker')}>
+              <MaterialCommunityIcons name="cup-water" size={24} color="#000" style={{ marginBottom: 4 }} />
+              <Text style={styles.mealBoxText}>Water Tracker</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.tableContainer}>
@@ -194,7 +153,7 @@ function CalorieTracker() {
                     <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'left' }]}>{food.name}</Text>
                     <Text style={styles.tableCell}>{food.quantity}</Text>
                     <Text style={styles.tableCell}>{food.weight > 0 ? `${food.weight} g` : '-'}</Text>
-                    <Text style={styles.tableCell}>{food.calories} kcal</Text>
+                    <Text style={styles.tableCell}>{food.calories}</Text>
                     <TouchableOpacity
                       onPress={() => handleRemoveFood(index)}
                       style={styles.deleteButton}
