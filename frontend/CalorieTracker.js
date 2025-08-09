@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, SafeAreaView, ScrollView } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 
 const calorieGoal = 2000;
 
@@ -156,11 +156,26 @@ function CalorieTracker() {
               )}
             </TouchableOpacity>
             <View style={styles.mealBoxesContainer}>
-              <View style={styles.mealBox}><Text style={styles.mealBoxText}>Breakfast</Text></View>
-              <View style={styles.mealBox}><Text style={styles.mealBoxText}>Lunch</Text></View>
-              <View style={styles.mealBox}><Text style={styles.mealBoxText}>Dinner</Text></View>
-              <View style={styles.mealBox}><Text style={styles.mealBoxText}>Snacks/Other</Text></View>
-              <View style={styles.mealBox}><Text style={styles.mealBoxText}>Water Tracker</Text></View>
+               <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('Breakfast')}>
+                 <MaterialCommunityIcons name="food-croissant" size={24} color="#000" style={{ marginRight: 8 }} />
+                 <Text style={styles.mealBoxText}>Breakfast</Text>
+               </TouchableOpacity>
+               <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('Lunch')}>
+                 <MaterialCommunityIcons name="food-fork-drink" size={24} color="#000" style={{ marginRight: 8 }} />
+                 <Text style={styles.mealBoxText}>Lunch</Text>
+               </TouchableOpacity>
+              <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('Dinner')}>
+                <MaterialCommunityIcons name="food-steak" size={24} color="#000" style={{ marginRight: 8 }} />
+                <Text style={styles.mealBoxText}>Dinner</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('SnacksOther')}>
+                <MaterialCommunityIcons name="cookie" size={24} color="#000" style={{ marginRight: 8 }} />
+                <Text style={styles.mealBoxText}>Snacks/Other</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('WaterTracker')}>
+                <FontAwesome5 name="tint" size={24} color="#000" style={{ marginRight: 8 }} />
+                <Text style={styles.mealBoxText}>Water Tracker</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -467,18 +482,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   mealBox: {
-    backgroundColor: '#e0f7fa',
+    backgroundColor: '#fff',
     borderRadius: 16,
     marginVertical: 6,
     paddingVertical: 18,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    flexDirection: 'row',
     elevation: 2,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    paddingLeft: 16,
   },
   mealBoxText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#388e3c',
+    color: '#000',
   },
 });
 
