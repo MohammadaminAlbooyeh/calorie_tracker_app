@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFood } from './FoodContext';
 
@@ -8,56 +8,18 @@ const calorieGoal = 2000;
 
 function CalorieTracker() {
   const navigation = useNavigation();
-  const { entries, addFood, removeFood } = useFood();
-  const [foodName, setFoodName] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [weight, setWeight] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState(null);
-  const [isError, setIsError] = useState(false);
+  const { entries, removeFood } = useFood();
 
-  const handleAddFood = () => {
-    if (!foodName.trim()) {
-      setMessage('Please enter a food name.');
-      setIsError(true);
-      return;
-    }
-    setIsLoading(true);
-    setMessage(null);
-    const qty = parseFloat(quantity) || 1;
-    const wght = parseFloat(weight) || 0;
-    const calories = Math.floor(qty * 100 + wght * 0.5);
-    const protein = Math.floor(qty * 5);
-    const carbs = Math.floor(qty * 10);
-    const fat = Math.floor(qty * 2);
-    addFood({
-      name: foodName,
-      quantity: qty,
-      weight: wght,
-      protein,
-      carbs,
-      fat,
-      calories,
-    });
-    setFoodName("");
-    setQuantity("");
-    setWeight("");
-    setMessage('Food added successfully!');
-    setIsError(false);
-    setIsLoading(false);
-  };
-
-  const handleRemoveFood = (indexToRemove) => {
-    removeFood(indexToRemove);
-    setMessage('Food removed successfully!');
-    setIsError(false);
-  };
-
+  // total consume calorie
   const totalCalories = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
   const totalProtein = entries.reduce((sum, e) => sum + (e.protein || 0), 0);
   const totalCarbs = entries.reduce((sum, e) => sum + (e.carbs || 0), 0);
   const totalFat = entries.reduce((sum, e) => sum + (e.fat || 0), 0);
   const progressPercent = Math.min(totalCalories / calorieGoal, 1);
+
+  const handleRemoveFood = (indexToRemove) => {
+    removeFood(indexToRemove);
+  };
 
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
@@ -77,12 +39,11 @@ function CalorieTracker() {
                 style={{
                   ...styles.progressBar,
                   width: `${progressPercent * 100}%`,
-                  // سبز روشن تا قرمز تیره
                   backgroundColor: `rgb(${Math.floor(144 + (progressPercent * 111))},${Math.floor(238 - (progressPercent * 238))},${Math.floor(144 - (progressPercent * 144))})`,
                 }}
               />
               <Text style={styles.progressText}>
-                {`${(progressPercent * 100).toFixed(0)}%`}
+                {`${totalCalories} / ${calorieGoal} kcal`}
               </Text>
               <Text style={styles.progressTextRight}>
                 {`${calorieGoal} cal`}
@@ -103,17 +64,6 @@ function CalorieTracker() {
               </View>
             </View>
           </View>
-
-          {message ? (
-            <View style={[styles.messageContainer, isError ? styles.errorBackground : styles.successBackground]}>
-              <MaterialCommunityIcons 
-                name={isError ? 'alert-circle-outline' : 'check-circle-outline'}
-                size={20}
-                color={isError ? '#D32F2F' : '#388e3c'}
-              />
-              <Text style={[styles.messageText, isError ? styles.errorText : styles.successText]}>{message}</Text>
-            </View>
-          ) : null}
 
           <View style={styles.mealBoxesContainer}>
             <TouchableOpacity style={styles.mealBox} onPress={() => navigation.navigate('Breakfast')}>
@@ -242,7 +192,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   intakeCard: {
-  backgroundColor: '#fff',
+    backgroundColor: '#fff',
     borderRadius: 24,
     padding: 20,
     marginHorizontal: 16,
@@ -280,22 +230,22 @@ const styles = StyleSheet.create({
     top: 0,
   },
   progressText: {
-  position: 'absolute',
-  left: 24,
-  top: 8,
-  fontSize: 24,
-  color: '#333',
-  fontWeight: 'bold',
-  zIndex: 1,
+    position: 'absolute',
+    left: 24,
+    top: 8,
+    fontSize: 24,
+    color: '#333',
+    fontWeight: 'bold',
+    zIndex: 1,
   },
   progressTextRight: {
-  position: 'absolute',
-  right: 16,
-  top: 32,
-  fontSize: 14,
-  color: '#333',
-  fontWeight: 'bold',
-  zIndex: 2,
+    position: 'absolute',
+    right: 16,
+    top: 32,
+    fontSize: 14,
+    color: '#333',
+    fontWeight: 'bold',
+    zIndex: 2,
   },
   intakeMacrosRow: {
     flexDirection: 'row',
@@ -318,64 +268,6 @@ const styles = StyleSheet.create({
   intakeMacroValue: {
     fontSize: 14,
     color: '#333',
-  },
-  messageContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    marginHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  successBackground: {
-    backgroundColor: '#e8f5e9',
-  },
-  errorBackground: {
-    backgroundColor: '#ffebee',
-  },
-  messageText: {
-    marginLeft: 8,
-    fontSize: 14,
-  },
-  successText: {
-    color: '#388e3c',
-  },
-  errorText: {
-    color: '#D32F2F',
-  },
-  formContainer: {
-    paddingHorizontal: 16,
-    marginTop: 16,
-  },
-  label: {
-    fontSize: 14,
-    color: '#555',
-    marginBottom: 4,
-    fontWeight: '600',
-  },
-  input: {
-    height: 48,
-    borderColor: '#e0e0e0',
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    backgroundColor: '#fff',
-    color: '#222',
-  },
-  addButton: {
-    backgroundColor: '#4caf50',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    elevation: 2,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
   tableContainer: {
     backgroundColor: '#fff',
