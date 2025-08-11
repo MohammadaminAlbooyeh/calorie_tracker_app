@@ -13,8 +13,14 @@ export function FoodProvider({ children }) {
     setEntries(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
+  const updateFood = (indexToUpdate, updatedFood) => {
+    setEntries(prev =>
+      prev.map((item, idx) => (idx === indexToUpdate ? updatedFood : item))
+    );
+  };
+
   return (
-    <FoodContext.Provider value={{ entries, addFood, removeFood }}>
+    <FoodContext.Provider value={{ entries, addFood, removeFood, updateFood }}>
       {children}
     </FoodContext.Provider>
   );

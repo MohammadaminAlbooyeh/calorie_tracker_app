@@ -1,21 +1,65 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFood } from './FoodContext';
+import { getFoodNutrition } from './api'; // اگه داری این فایل رو
 
 const calorieGoal = 2000;
 
 function CalorieTracker() {
   const navigation = useNavigation();
-  const { entries, removeFood } = useFood();
+  const { entries, updateFood, removeFood } = useFood();
+  const [loading, setLoading] = useState(false);
 
-  // total consume calorie
+  // جمع کالری و ماکرونو ت محاسبه کن
   const totalCalories = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
   const totalProtein = entries.reduce((sum, e) => sum + (e.protein || 0), 0);
   const totalCarbs = entries.reduce((sum, e) => sum + (e.carbs || 0), 0);
   const totalFat = entries.reduce((sum, e) => sum + (e.fat || 0), 0);
   const progressPercent = Math.min(totalCalories / calorieGoal, 1);
+
+  // اگر غذایی فاقد اطلاعات تغذیه‌ای است، از api داده بگیر و اپدیت کن
+  const fetchNutrition = async (food, index) => {
+    try {
+      const nutritionData = await getFoodNutrition(food.name);
+      if (nutritionData && nutritionData.results && nutritionData.results.length > 0) {
+        const info = nutritionData.results[0];
+        const updatedFood = {
+          ...food,
+          calories: info.calories || food.calories,
+          protein: info.protein || food.protein,
+          carbs: info.carbs || food.carbs,
+          fat: info.fat || food.fat,
+        };
+        updateFood(index, updatedFood);
+      }
+    } catch (error) {
+      console.error("Error fetching nutrition for", food.name, error);
+    }
+  };
+
+  useEffect(() => {
+    async function updateNutritionInfo() {
+      setLoading(true);
+      for (let i = 0; i < entries.length; i++) {
+        const food = entries[i];
+        if (!food.calories || !food.protein || !food.carbs || !food.fat) {
+          await fetchNutrition(food, i);
+        }
+      }
+      setLoading(false);
+    }
+    updateNutritionInfo();
+  }, [entries]);
 
   const handleRemoveFood = (indexToRemove) => {
     removeFood(indexToRemove);
@@ -39,28 +83,34 @@ function CalorieTracker() {
                 style={{
                   ...styles.progressBar,
                   width: `${progressPercent * 100}%`,
-                  backgroundColor: `rgb(${Math.floor(144 + (progressPercent * 111))},${Math.floor(238 - (progressPercent * 238))},${Math.floor(144 - (progressPercent * 144))})`,
+                  backgroundColor: `rgb(${Math.floor(
+                    144 + progressPercent * 111
+                  )},${Math.floor(238 - progressPercent * 238)},${Math.floor(144 - progressPercent * 144)})`,
                 }}
               />
               <Text style={styles.progressText}>
                 {`${totalCalories} / ${calorieGoal} kcal`}
               </Text>
-              <Text style={styles.progressTextRight}>
-                {`${calorieGoal} cal`}
-              </Text>
+              <Text style={styles.progressTextRight}>{`${calorieGoal} cal`}</Text>
             </View>
             <View style={styles.intakeMacrosRow}>
               <View style={styles.intakeMacroItem}>
                 <Text style={styles.intakeMacroLabel}>Carbs</Text>
-                <Text style={styles.intakeMacroValue}>{entries.length === 0 ? '-' : `${totalCarbs} g`}</Text>
+                <Text style={styles.intakeMacroValue}>
+                  {entries.length === 0 ? '-' : `${totalCarbs} g`}
+                </Text>
               </View>
               <View style={styles.intakeMacroItem}>
                 <Text style={styles.intakeMacroLabel}>Proteins</Text>
-                <Text style={styles.intakeMacroValue}>{entries.length === 0 ? '-' : `${totalProtein} g`}</Text>
+                <Text style={styles.intakeMacroValue}>
+                  {entries.length === 0 ? '-' : `${totalProtein} g`}
+                </Text>
               </View>
               <View style={styles.intakeMacroItem}>
                 <Text style={styles.intakeMacroLabel}>Fats</Text>
-                <Text style={styles.intakeMacroValue}>{entries.length === 0 ? '-' : `${totalFat} g`}</Text>
+                <Text style={styles.intakeMacroValue}>
+                  {entries.length === 0 ? '-' : `${totalFat} g`}
+                </Text>
               </View>
             </View>
           </View>
@@ -90,24 +140,32 @@ function CalorieTracker() {
 
           <View style={styles.tableContainer}>
             <Text style={styles.tableHeader}>Added Foods</Text>
+            {loading && <ActivityIndicator size="large" color="#388e3c" />}
             {entries.length > 0 ? (
               <View>
                 <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                  <Text style={[styles.tableCell, styles.tableHeaderCell, { flex: 1.5, textAlign: 'left' }]}>Food</Text>
+                  <Text style={[styles.tableCell, styles.tableHeaderCell, { flex: 1.5, textAlign: 'left' }]}>
+                    Food
+                  </Text>
                   <Text style={[styles.tableCell, styles.tableHeaderCell]}>Items</Text>
                   <Text style={[styles.tableCell, styles.tableHeaderCell]}>Weight</Text>
                   <Text style={[styles.tableCell, styles.tableHeaderCell]}>Calories</Text>
+                  <Text style={[styles.tableCell, styles.tableHeaderCell]}>Protein</Text>
+                  <Text style={[styles.tableCell, styles.tableHeaderCell]}>Carbs</Text>
+                  <Text style={[styles.tableCell, styles.tableHeaderCell]}>Fat</Text>
                 </View>
                 {entries.map((food, index) => (
                   <View key={index} style={styles.tableRow}>
                     <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'left' }]}>{food.name}</Text>
                     <Text style={styles.tableCell}>{food.quantity}</Text>
-                    <Text style={styles.tableCell}>{food.weight > 0 ? `${food.weight} g` : '-'}</Text>
-                    <Text style={styles.tableCell}>{food.calories}</Text>
-                    <TouchableOpacity
-                      onPress={() => handleRemoveFood(index)}
-                      style={styles.deleteButton}
-                    >
+                    <Text style={styles.tableCell}>
+                      {food.weight > 0 ? `${food.weight} g` : '-'}
+                    </Text>
+                    <Text style={styles.tableCell}>{food.calories ? food.calories : '-'}</Text>
+                    <Text style={styles.tableCell}>{food.protein ? food.protein : '-'}</Text>
+                    <Text style={styles.tableCell}>{food.carbs ? food.carbs : '-'}</Text>
+                    <Text style={styles.tableCell}>{food.fat ? food.fat : '-'}</Text>
+                    <TouchableOpacity onPress={() => handleRemoveFood(index)} style={styles.deleteButton}>
                       <MaterialCommunityIcons name="minus-circle" size={20} color="#D32F2F" />
                     </TouchableOpacity>
                   </View>
@@ -143,210 +201,166 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   navButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     backgroundColor: '#388e3c',
-    paddingVertical: 10,
-    paddingHorizontal: 32,
-    borderRadius: 16,
-    marginHorizontal: 8,
+    borderRadius: 20,
   },
   navButtonText: {
-    color: '#fff',
-    fontSize: 18,
+    color: 'white',
     fontWeight: 'bold',
   },
   safeAreaContainer: {
     flex: 1,
-    backgroundColor: '#f8f8ff',
+    backgroundColor: '#f7f7f7',
   },
   scrollView: {
-    marginBottom: 70,
+    paddingHorizontal: 20,
   },
   container: {
     flex: 1,
+    paddingTop: 20,
   },
   headerContainer: {
-    marginTop: 24,
-    alignItems: 'center',
+    marginBottom: 24,
   },
   appTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#222',
-    letterSpacing: 1,
+    color: '#333',
   },
   subtitle: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 4,
+    fontSize: 16,
+    color: '#666',
   },
   topBar: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 12,
-    paddingHorizontal: 16,
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   dateText: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
   },
   intakeCard: {
     backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 20,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    elevation: 3,
   },
   intakeLabel: {
-    fontSize: 16,
-    color: '#388e3c',
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
   },
   progressBarContainer: {
-    width: '100%',
-    height: 48,
+    height: 28,
     backgroundColor: '#e0e0e0',
-    borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
-    marginBottom: 16,
-    marginTop: 8,
-    alignSelf: 'stretch',
+    borderRadius: 14,
     justifyContent: 'center',
+    marginBottom: 8,
+    position: 'relative',
   },
   progressBar: {
-    height: 48,
-    borderRadius: 24,
+    height: 28,
+    borderRadius: 14,
     position: 'absolute',
     left: 0,
     top: 0,
   },
   progressText: {
     position: 'absolute',
-    left: 24,
-    top: 8,
-    fontSize: 24,
+    left: 16,
     color: '#333',
     fontWeight: 'bold',
-    zIndex: 1,
   },
   progressTextRight: {
     position: 'absolute',
     right: 16,
-    top: 32,
-    fontSize: 14,
     color: '#333',
     fontWeight: 'bold',
-    zIndex: 2,
   },
   intakeMacrosRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#b4e6b4',
-    paddingTop: 12,
   },
   intakeMacroItem: {
     alignItems: 'center',
-    flex: 1,
   },
   intakeMacroLabel: {
     fontSize: 14,
-    color: '#388e3c',
-    fontWeight: 'bold',
-    marginBottom: 2,
+    fontWeight: '600',
+    color: '#555',
   },
   intakeMacroValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  mealBoxesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  mealBox: {
+    backgroundColor: '#fff',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: 4,
+    elevation: 3,
+  },
+  mealBoxText: {
+    fontWeight: '600',
     fontSize: 14,
-    color: '#333',
   },
   tableContainer: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    marginHorizontal: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    padding: 12,
+    marginBottom: 24,
+    elevation: 3,
   },
   tableHeader: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#222',
+    fontWeight: '700',
+    fontSize: 18,
     marginBottom: 12,
-  },
-  tableHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: '#ccc',
-  },
-  tableHeaderCell: {
-    fontWeight: 'bold',
-    color: '#555',
-    flex: 1,
-    textAlign: 'center',
+    color: '#333',
   },
   tableRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
     alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomColor: '#eee',
+    borderBottomWidth: 1,
+    position: 'relative',
+  },
+  tableHeaderRow: {
+    borderBottomWidth: 2,
   },
   tableCell: {
-    fontSize: 14,
-    color: '#333',
     flex: 1,
     textAlign: 'center',
-  },
-  noDataText: {
-    color: '#888',
     fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
+    color: '#555',
+  },
+  tableHeaderCell: {
+    fontWeight: '700',
+    color: '#333',
   },
   deleteButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    flex: 0.2,
+    position: 'absolute',
+    right: 12,
+    top: '50%',
+    marginTop: -10,
   },
-  mealBoxesContainer: {
-    flexDirection: 'column',
-    justifyContent: 'flex-start',
-    alignItems: 'stretch',
-    marginTop: 24,
-    marginBottom: 8,
-    paddingHorizontal: 8,
-  },
-  mealBox: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    marginVertical: 6,
-    paddingVertical: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  mealBoxText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
+  noDataText: {
+    textAlign: 'center',
+    paddingVertical: 20,
+    color: '#999',
   },
 });
 

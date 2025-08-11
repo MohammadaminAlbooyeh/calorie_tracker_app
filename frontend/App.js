@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { initDB } from './db';
+import { initDB } from './db';  // اگه فایل db داری
 import CalorieTracker from './CalorieTracker';
 import BreakfastScreen from './BreakfastScreen';
 import LunchScreen from './LunchScreen';
@@ -17,7 +17,7 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   useEffect(() => {
     try {
-      initDB();
+      initDB && initDB();
       console.log('Database initialized');
     } catch (error) {
       console.error('Error initializing DB:', error);
@@ -28,7 +28,11 @@ export default function App() {
     <FoodProvider>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="CalorieTracker">
-          <Stack.Screen name="CalorieTracker" component={CalorieTracker} options={{ title: 'Calorie Tracker' }} />
+          <Stack.Screen
+            name="CalorieTracker"
+            component={CalorieTracker}
+            options={{ title: 'Calorie Tracker' }}
+          />
           <Stack.Screen name="Breakfast" component={BreakfastScreen} />
           <Stack.Screen name="Lunch" component={LunchScreen} />
           <Stack.Screen name="Dinner" component={DinnerScreen} />

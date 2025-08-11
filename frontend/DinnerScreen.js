@@ -1,248 +1,116 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useFood } from './FoodContext';
 
 export default function DinnerScreen() {
-  const { entries, addFood, removeFood } = useFood();
-  const [foodName, setFoodName] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [weight, setWeight] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState(null);
-  const [isError, setIsError] = useState(false);
+  const { addFood } = useFood();
 
-  const handleRemoveFood = (indexToRemove) => {
-    removeFood(indexToRemove);
-    setMessage('Food removed successfully!');
-    setIsError(false);
-  };
+  const [foodName, setFoodName] = useState('');
+  const [itemNumber, setItemNumber] = useState('');
+  const [quantity, setQuantity] = useState('');
 
   const handleAddFood = () => {
     if (!foodName.trim()) {
-      setMessage('Please enter a food name.');
-      setIsError(true);
+      Alert.alert('Error', 'Please enter the food name.');
       return;
     }
-    setIsLoading(true);
-    setMessage(null);
-    setTimeout(() => {
-      const qty = parseFloat(quantity) || 1;
-      const wght = parseFloat(weight) || 0;
-      const calories = Math.floor(qty * 100 + wght * 0.5);
-      addFood({
-        name: foodName,
-        quantity: qty,
-        weight: wght,
-        calories,
-      });
-      setFoodName("");
-      setQuantity("");
-      setWeight("");
-      setMessage('Food added successfully!');
-      setIsError(false);
-      setIsLoading(false);
-    }, 700);
+    if (!itemNumber.trim()) {
+      Alert.alert('Error', 'Please enter the item number.');
+      return;
+    }
+    if (!quantity.trim()) {
+      Alert.alert('Error', 'Please enter the quantity.');
+      return;
+    }
+
+    const newFood = {
+      name: foodName.trim(),
+      quantity: Number(itemNumber),
+      weight: Number(quantity),
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+    };
+
+    addFood(newFood);
+
+    setFoodName('');
+    setItemNumber('');
+    setQuantity('');
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Dinner Page</Text>
-      <View style={styles.formContainer}>
-        <Text style={styles.label}>Food Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter food name"
-          value={foodName}
-          onChangeText={setFoodName}
-          placeholderTextColor="#aaa"
-        />
-        <Text style={styles.label}>Quantity (items)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., 1, 2, 3"
-          keyboardType="numeric"
-          value={quantity}
-          onChangeText={setQuantity}
-          placeholderTextColor="#aaa"
-        />
-        <Text style={styles.label}>Weight (g)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter weight in grams"
-          keyboardType="numeric"
-          value={weight}
-          onChangeText={setWeight}
-          placeholderTextColor="#aaa"
-        />
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={handleAddFood}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.addButtonText}>Add Food</Text>
-          )}
-        </TouchableOpacity>
-        {message ? (
-          <Text style={[styles.message, isError ? styles.errorText : styles.successText]}>{message}</Text>
-        ) : null}
-      </View>
-      <View style={styles.tableContainer}>
-        <Text style={styles.tableHeader}>Added Foods</Text>
-        {entries.length > 0 ? (
-          <View>
-            <View style={[styles.tableRow, styles.tableHeaderRow]}>
-              <Text style={[styles.tableCell, styles.tableHeaderCell, { flex: 1.5, textAlign: 'left' }]}>Food</Text>
-              <Text style={[styles.tableCell, styles.tableHeaderCell]}>Items</Text>
-              <Text style={[styles.tableCell, styles.tableHeaderCell]}>Weight</Text>
-              <Text style={[styles.tableCell, styles.tableHeaderCell]}>Calories</Text>
-            </View>
-            {entries.map((food, index) => (
-              <View key={index} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'left' }]}>{food.name}</Text>
-                <Text style={styles.tableCell}>{food.quantity}</Text>
-                <Text style={styles.tableCell}>{food.weight ? `${food.weight} g` : '-'}</Text>
-                <Text style={styles.tableCell}>{food.calories}</Text>
-                <TouchableOpacity
-                  onPress={() => handleRemoveFood(index)}
-                  style={styles.deleteButton}
-                >
-                  <MaterialCommunityIcons name="minus-circle" size={20} color="#D32F2F" />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <Text style={styles.noDataText}>No foods added yet.</Text>
-        )}
-      </View>
-    </View>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <Text style={styles.title}>Add Dinner Food</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Food Name"
+        value={foodName}
+        onChangeText={setFoodName}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Item Number"
+        keyboardType="numeric"
+        value={itemNumber}
+        onChangeText={setItemNumber}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Quantity (grams)"
+        keyboardType="numeric"
+        value={quantity}
+        onChangeText={setQuantity}
+      />
+
+      <TouchableOpacity style={styles.button} onPress={handleAddFood}>
+        <Text style={styles.buttonText}>Add Food</Text>
+      </TouchableOpacity>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingTop: 32,
+    padding: 20,
+    justifyContent: 'center',
+    backgroundColor: '#f8f8ff',
   },
-  text: {
+  title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 24,
-  },
-  formContainer: {
-    width: '90%',
-    backgroundColor: '#f8f8ff',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 14,
-    color: '#555',
-    marginBottom: 4,
-    fontWeight: '600',
+    textAlign: 'center',
+    color: '#222',
   },
   input: {
-    height: 48,
-    borderColor: '#e0e0e0',
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    backgroundColor: '#fff',
-    color: '#222',
-  },
-  addButton: {
-    backgroundColor: '#4caf50',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: '#ccc',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
     marginBottom: 16,
-    elevation: 2,
+    backgroundColor: '#fff',
   },
-  addButtonText: {
+  button: {
+    backgroundColor: '#388e3c',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  buttonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
-  },
-  message: {
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  successText: {
-    color: '#388e3c',
-  },
-  errorText: {
-    color: '#D32F2F',
-  },
-  tableContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    width: '90%',
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 24,
-  },
-  tableHeader: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#222',
-    marginBottom: 12,
-  },
-  tableHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: '#ccc',
-  },
-  tableHeaderCell: {
-    fontWeight: 'bold',
-    color: '#555',
-    flex: 1,
-    textAlign: 'center',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    alignItems: 'center',
-  },
-  tableCell: {
-    fontSize: 14,
-    color: '#333',
-    flex: 1,
-    textAlign: 'center',
-  },
-  noDataText: {
-    color: '#888',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  deleteButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    flex: 0.2,
+    fontSize: 18,
   },
 });
