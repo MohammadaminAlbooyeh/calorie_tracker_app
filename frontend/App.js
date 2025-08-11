@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { initDB } from './db';  // اگه فایل db داری
+import { initDB } from './db/initDB';
 import CalorieTracker from './CalorieTracker';
 import BreakfastScreen from './BreakfastScreen';
 import LunchScreen from './LunchScreen';

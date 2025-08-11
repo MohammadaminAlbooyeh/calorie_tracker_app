@@ -69,6 +69,6 @@ A simple calorie tracking app with a FastAPI backend and React Native (Expo) fro
 
 - Food names are case-insensitive.
 - Most food calories are per 100g, but fruits are per piece (see `foods_db.py`).
-- The frontend food list and chart are local; for full integration, connect frontend to backend endpoints
+- The frontend food list and chart are local; for full integration, connect frontend to backend endpoints.
 
 ---
