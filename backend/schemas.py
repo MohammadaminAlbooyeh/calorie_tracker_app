@@ -1,3 +1,18 @@
+# Activity schemas
+class ActivityBase(BaseModel):
+    activity_name: str
+    duration: int = 0
+    calories_burned: int = 0
+    date: str
+
+class ActivityCreate(ActivityBase):
+    pass
+
+class Activity(ActivityBase):
+    id: int
+
+    class Config:
+        orm_mode = True
 # schemas.py
 from pydantic import BaseModel
 

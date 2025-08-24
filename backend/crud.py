@@ -1,3 +1,22 @@
+# CRUD for Activity
+def create_activity(db: Session, activity: schemas.ActivityCreate):
+    db_activity = models.Activity(
+        activity_name=activity.activity_name,
+        duration=activity.duration,
+        calories_burned=activity.calories_burned,
+        date=activity.date
+    )
+    db.add(db_activity)
+    db.commit()
+    db.refresh(db_activity)
+    return db_activity
+
+def get_activities_by_date(db: Session, date: str):
+    return db.query(models.Activity).filter(models.Activity.date == date).all()
+
+def get_total_burned_by_date(db: Session, date: str):
+    result = db.query(models.Activity).filter(models.Activity.date == date).all()
+    return sum(a.calories_burned for a in result)
 # crud.py
 from sqlalchemy.orm import Session
 import models, schemas

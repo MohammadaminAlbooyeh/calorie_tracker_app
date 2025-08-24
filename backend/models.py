@@ -1,3 +1,12 @@
+# Activity model
+class Activity(Base):
+    __tablename__ = "activities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    activity_name = Column(String, index=True)
+    duration = Column(Integer, default=0)  # duration in minutes
+    calories_burned = Column(Integer, default=0)
+    date = Column(String, index=True)  # e.g., '2025-08-24'
 # models.py
 from sqlalchemy import Column, Integer, String, Float
 from database import Base

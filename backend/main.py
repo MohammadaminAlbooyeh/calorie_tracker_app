@@ -3,6 +3,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 import models, schemas, crud
 from database import SessionLocal, engine, Base
+from typing import List
 
 
 app = FastAPI(title="Calorie Tracker API")
@@ -45,3 +46,20 @@ def get_calorie_goal(date: str, db: Session = Depends(get_db)):
 @app.get("/entries/", response_model=list[schemas.Food])
 def get_all_entries(db: Session = Depends(get_db)):
     return crud.get_foods(db)
+
+# Activity endpoints
+
+# Add a new activity (exercise)
+@app.post("/activity/", response_model=schemas.Activity)
+def add_activity(activity: schemas.ActivityCreate, db: Session = Depends(get_db)):
+    return crud.create_activity(db=db, activity=activity)
+
+# Get all activities for a specific date
+@app.get("/activities/{date}", response_model=List[schemas.Activity])
+def get_activities(date: str, db: Session = Depends(get_db)):
+    return crud.get_activities_by_date(db, date)
+
+# Get total calories burned for a specific date
+@app.get("/activities/{date}/total_burned", response_model=int)
+def get_total_burned(date: str, db: Session = Depends(get_db)):
+    return crud.get_total_burned_by_date(db, date)
