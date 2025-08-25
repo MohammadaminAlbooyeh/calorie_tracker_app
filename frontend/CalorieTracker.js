@@ -8,17 +8,40 @@ import {
   SafeAreaView,
   ScrollView,
   ActivityIndicator,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFood } from './FoodContext';
 import { getFoodNutrition } from './api'; // اگه داری این فایل رو
+import { PieChart } from 'react-native-chart-kit';
 
 const calorieGoal = 2000;
+
+function Snackbar({ message, type, onDismiss }) {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    if (visible) {
+      const timer = setTimeout(() => {
+        setVisible(false);
+        onDismiss && onDismiss();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [visible, onDismiss]);
+  if (!visible) return null;
+  return (
+    <View style={[styles.snackbar, type === 'error' ? styles.snackbarError : styles.snackbarSuccess]}>
+      <Text style={styles.snackbarText}>{message}</Text>
+    </View>
+  );
+}
 
 function CalorieTracker() {
   const navigation = useNavigation();
   const { entries, updateFood, removeFood } = useFood();
   const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ message: '', type: 'success', visible: false });
 
   // جمع کالری و ماکرونو ت محاسبه کن
   const totalCalories = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
@@ -43,6 +66,7 @@ function CalorieTracker() {
         updateFood(index, updatedFood);
       }
     } catch (error) {
+      setSnackbar({ message: `Error fetching nutrition for ${food.name}`, type: 'error', visible: true });
       console.error("Error fetching nutrition for", food.name, error);
     }
   };
@@ -63,7 +87,33 @@ function CalorieTracker() {
 
   const handleRemoveFood = (indexToRemove) => {
     removeFood(indexToRemove);
+    setSnackbar({ message: 'Food removed successfully.', type: 'success', visible: true });
   };
+
+  const screenWidth = Dimensions.get('window').width;
+  const macroPieData = [
+    {
+      name: 'Carbs',
+      grams: totalCarbs,
+      color: '#42a5f5',
+      legendFontColor: '#333',
+      legendFontSize: 14,
+    },
+    {
+      name: 'Protein',
+      grams: totalProtein,
+      color: '#66bb6a',
+      legendFontColor: '#333',
+      legendFontSize: 14,
+    },
+    {
+      name: 'Fat',
+      grams: totalFat,
+      color: '#ffa726',
+      legendFontColor: '#333',
+      legendFontSize: 14,
+    },
+  ].filter(item => item.grams > 0);
 
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
@@ -175,6 +225,37 @@ function CalorieTracker() {
               <Text style={styles.noDataText}>No foods added yet.</Text>
             )}
           </View>
+
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 8, color: '#333' }}>
+              Macronutrient Breakdown
+            </Text>
+            {macroPieData.length > 0 ? (
+              <PieChart
+                data={macroPieData.map(item => ({
+                  name: item.name,
+                  population: item.grams,
+                  color: item.color,
+                  legendFontColor: item.legendFontColor,
+                  legendFontSize: item.legendFontSize,
+                }))}
+                width={screenWidth - 40}
+                height={180}
+                chartConfig={{
+                  color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+                  labelColor: () => '#333',
+                  backgroundGradientFrom: '#fff',
+                  backgroundGradientTo: '#fff',
+                }}
+                accessor={'population'}
+                backgroundColor={'transparent'}
+                paddingLeft={'16'}
+                absolute
+              />
+            ) : (
+              <Text style={{ color: '#999', textAlign: 'center' }}>No macronutrient data yet.</Text>
+            )}
+          </View>
         </View>
       </ScrollView>
       <View style={styles.bottomNav}>
@@ -185,6 +266,13 @@ function CalorieTracker() {
           <Text style={styles.navButtonText}>Food Log</Text>
         </TouchableOpacity>
       </View>
+      {snackbar.visible && (
+        <Snackbar
+          message={snackbar.message}
+          type={snackbar.type}
+          onDismiss={() => setSnackbar({ ...snackbar, visible: false })}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -361,6 +449,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 20,
     color: '#999',
+  },
+  snackbar: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: 40,
+    padding: 16,
+    borderRadius: 8,
+    zIndex: 100,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  snackbarSuccess: {
+    backgroundColor: '#43a047',
+  },
+  snackbarError: {
+    backgroundColor: '#d32f2f',
+  },
+  snackbarText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 
